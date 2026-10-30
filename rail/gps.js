@@ -25,7 +25,7 @@
    timer=env.setInterval(()=>{if(active&&lastValid&&Date.now()-lastValid>10000){lastValid=0;filter.reset();callbacks.lost('Сигнал GPS устарел. Текущий км/ПК и профиль скрыты.')}},1000);
    try{watch=env.navigator.geolocation.watchPosition(position=>{
     if(!active||token!==session)return;callbacks.measure?.(position);const fix=filter.accept(position);if(!fix.ok){lastValid=0;callbacks.lost(fix.reason,fix);return}lastValid=fix.timestamp;callbacks.fix(fix);
-   },error=>{if(active&&token===session)stop(error.code===1?'Разрешите геопозицию для сайта в настройках телефона.':'Не удалось получить GPS. Включите следование повторно.')},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
+   },error=>{if(!active||token!==session)return;if(error.code===1){stop('Разрешите геопозицию для сайта в настройках телефона.');return}lastValid=0;filter.reset();callbacks.lost(error.code===3?'Телефон пока не передал свежие координаты. GPS включён, ожидаем сигнал.':'Телефон временно не определяет координаты. GPS включён, ожидаем восстановление.');},{enableHighAccuracy:true,maximumAge:0,timeout:20000})}
    catch(e){stop('GPS недоступен: '+e.message)}
   }
   return {start,stop,isActive:()=>active};
