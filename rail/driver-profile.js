@@ -158,7 +158,7 @@
    if(currentRoute!==route.id){center=next.chain;selection=null;follow=true;$('driverDetail').hidden=true;currentRoute=route.id}
    if(center===null||follow)center=next.chain;
    $('driverPosition').textContent=next.mode==='gps'&&!next.valid?'Км/ПК не определён':(next.mode==='gps'?'≈ ':'')+fmt(next.chain);$('driverRoute').textContent=route.name;for(const [id,d] of [['driverEven',1],['driverOdd',-1]]){$(id).setAttribute('aria-pressed',String(route.direction===d));$(id).style.borderColor=route.direction===d?'var(--driver-accent, #4fe0b2)':'';}
-   $('driverMode').textContent=next.mode==='gps'?(next.valid?'GPS · приблизительная позиция':'GPS · позиция не подтверждена'):'Ручной просмотр';
+   $('driverMode').textContent=next.mode==='gps'?(next.valid?'GPS · приблизительная позиция':next.overviewOnly?'Участок по GPS · км/ПК не подтверждён':'GPS · позиция не подтверждена'):'Ручной просмотр';
    $('driverHere').textContent=follow?'К позиции':'Вернуться';
    render();
   }

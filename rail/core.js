@@ -38,6 +38,19 @@
   if(previous&&previous.time&&previous.chain&&Date.now()-previous.time<20000&&Math.abs(previous.chain-best.chain)>2500)return {ok:false,reason:'Резкий скачок GPS. Ожидаем устойчивую позицию.'};
   return {ok:true,...best,accuracy,time:Date.now()};
  }
+ // Broad location is only for selecting a document/overview, never for confirming km/PK.
+ function overviewLocation(data,lat,lon,accuracy){
+  if(![lat,lon,accuracy].every(Number.isFinite)||accuracy<0||accuracy>25)return null;
+  const candidates=[];
+  for(const s of data.sections)for(let i=1;i<s.points.length;i++){
+   const a=s.points[i-1],b=s.points[i];if(b[0]-a[0]>1500||distance(a,b)>2000)continue;
+   const p=project([0,lat,lon],a,b);if(!p||p.chain<s.start||p.chain>s.end||(i===1&&p.raw<0)||(i===s.points.length-1&&p.raw>1))continue;
+   candidates.push(p);
+  }
+  candidates.sort((a,b)=>a.distance-b.distance);const best=candidates[0];
+  if(!best||best.distance>500||candidates.some(p=>Math.abs(p.chain-best.chain)>2000&&p.distance<best.distance+100))return null;
+  return {chain:best.chain,distance:best.distance};
+ }
  function gradeAt(data,m){
   for(const s of data.sections){const g=s.grades.find(g=>g[0]<=m&&m<g[1]);if(g)return {grade:g[2],start:g[0],end:g[1],source:s.source}}
   return null;
@@ -46,6 +59,6 @@
   const ranges=data.sections.flatMap(s=>s.grades.map(e=>[Math.max(e[0],s.start),Math.min(e[1],s.end)])).filter(e=>e[1]>e[0]).sort((a,b)=>a[0]-b[0]);
   const merged=[];for(const r of ranges){const p=merged.at(-1);if(p&&r[0]<=p[1]+.01)p[1]=Math.max(p[1],r[1]);else merged.push(r.slice())}return merged;
  }
- const api={validate,format,formatPicket,locate,gradeAt,coverage,distance,project};
+ const api={validate,format,formatPicket,locate,gradeAt,coverage,distance,project,overviewLocation};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RailCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
