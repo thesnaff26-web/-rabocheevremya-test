@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 31515)
-Total output lines: 4877
-
 {
   "schema": 1,
   "year": 2026,
@@ -17,7 +14,7 @@ Total output lines: 4877
       "leaves": [
         {
           "number": 1,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Титульный лист",
@@ -27,7 +24,7 @@ Total output lines: 4877
         },
         {
           "number": 2,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Согласование и утверждение",
@@ -37,7 +34,7 @@ Total output lines: 4877
         },
         {
           "number": 3,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Разработчик",
@@ -47,7 +44,7 @@ Total output lines: 4877
         },
         {
           "number": 4,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Условные обозначения",
@@ -57,7 +54,7 @@ Total output lines: 4877
         },
         {
           "number": 5,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Таблица из документа",
@@ -67,7 +64,7 @@ Total output lines: 4877
         },
         {
           "number": 6,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Порядок из документа",
@@ -77,7 +74,7 @@ Total output lines: 4877
         },
         {
           "number": 7,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Направление и путь · лист 7",
@@ -87,7 +84,7 @@ Total output lines: 4877
         },
         {
           "number": 8,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6585–6595 км",
@@ -108,8 +105,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-008-959efcd1c5.svg",
@@ -118,7 +115,7 @@ Total output lines: 4877
         },
         {
           "number": 9,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6595–6605 км",
@@ -140,7 +137,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.31,
-            843.0,
+            843,
             120.51
           ],
           "file": "rail/regimes/chernyshevsk-009-955406947d.svg",
@@ -149,7 +146,7 @@ Total output lines: 4877
         },
         {
           "number": 10,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6605–6615 км",
@@ -170,8 +167,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-010-33e294603a.svg",
@@ -180,7 +177,7 @@ Total output lines: 4877
         },
         {
           "number": 11,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6615–6625 км",
@@ -202,8 +199,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.496,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/chernyshevsk-011-0a05f7e8bb.svg",
           "sha256": "0a05f7e8bbf0719cfb00e04df1dc9abed3430ee97ef8781557ad493475d5f796",
@@ -211,7 +208,7 @@ Total output lines: 4877
         },
         {
           "number": 12,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6625–6635 км",
@@ -233,7 +230,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.946,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-012-d9cc02b052.svg",
@@ -242,7 +239,7 @@ Total output lines: 4877
         },
         {
           "number": 13,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6635–6645 км",
@@ -264,8 +261,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.946,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/chernyshevsk-013-4a0638a46c.svg",
           "sha256": "4a0638a46c0d565d53e216e1d1b8fa126c42b745c40a48a8c44b291357ab159d",
@@ -273,7 +270,7 @@ Total output lines: 4877
         },
         {
           "number": 14,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6645–6655 км",
@@ -295,7 +292,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             396.642,
-            843.0,
+            843,
             120.321
           ],
           "file": "rail/regimes/chernyshevsk-014-9a9db69871.svg",
@@ -304,7 +301,7 @@ Total output lines: 4877
         },
         {
           "number": 15,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6655–6665 км",
@@ -326,8 +323,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             394.548,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/chernyshevsk-015-8d224750c1.svg",
           "sha256": "8d224750c1f3acd0d2a3b45405fabf3518fd965aaaa4e76111ab0ee0343077fb",
@@ -335,7 +332,7 @@ Total output lines: 4877
         },
         {
           "number": 16,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6665–6675 км",
@@ -357,7 +354,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.946,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-016-90a0f90508.svg",
@@ -366,7 +363,7 @@ Total output lines: 4877
         },
         {
           "number": 17,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6675–6685 км",
@@ -388,7 +385,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             390.35,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-017-7fd6e29333.svg",
@@ -397,7 +394,7 @@ Total output lines: 4877
         },
         {
           "number": 18,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6685–6695 км",
@@ -419,7 +416,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             390.016,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-018-90f63ee639.svg",
@@ -428,7 +425,7 @@ Total output lines: 4877
         },
         {
           "number": 19,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6695–6705 км",
@@ -450,7 +447,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.926,
-            843.0,
+            843,
             120.33
           ],
           "file": "rail/regimes/chernyshevsk-019-212ed51c49.svg",
@@ -459,7 +456,7 @@ Total output lines: 4877
         },
         {
           "number": 20,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6705–6715 км",
@@ -481,7 +478,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.946,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-020-fcadb4ab36.svg",
@@ -490,7 +487,7 @@ Total output lines: 4877
         },
         {
           "number": 21,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6715–6725 км",
@@ -512,7 +509,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.946,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-021-5eebc00d74.svg",
@@ -521,7 +518,7 @@ Total output lines: 4877
         },
         {
           "number": 22,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6725–6735 км",
@@ -542,8 +539,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-022-8b8708f58d.svg",
@@ -552,7 +549,7 @@ Total output lines: 4877
         },
         {
           "number": 23,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6735–6745 км",
@@ -573,8 +570,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-023-59668df545.svg",
@@ -583,7 +580,7 @@ Total output lines: 4877
         },
         {
           "number": 24,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6745–6755 км",
@@ -604,8 +601,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-024-68c74e68ad.svg",
@@ -614,7 +611,7 @@ Total output lines: 4877
         },
         {
           "number": 25,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6755–6765 км",
@@ -635,8 +632,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-025-66cff2956c.svg",
@@ -645,7 +642,7 @@ Total output lines: 4877
         },
         {
           "number": 26,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6765–6775 км",
@@ -667,8 +664,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-026-0b6b954edc.svg",
@@ -677,7 +674,7 @@ Total output lines: 4877
         },
         {
           "number": 27,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6775–6785 км",
@@ -698,8 +695,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-027-af6e268800.svg",
@@ -708,7 +705,7 @@ Total output lines: 4877
         },
         {
           "number": 28,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6785–6795 км",
@@ -729,8 +726,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-028-899cf837ca.svg",
@@ -739,7 +736,7 @@ Total output lines: 4877
         },
         {
           "number": 29,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6795–6805 км",
@@ -760,8 +757,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-029-d129181222.svg",
@@ -770,7 +767,7 @@ Total output lines: 4877
         },
         {
           "number": 30,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6805–6815 км",
@@ -791,8 +788,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-030-45619377db.svg",
@@ -801,7 +798,7 @@ Total output lines: 4877
         },
         {
           "number": 31,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6815–6825 км",
@@ -822,8 +819,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-031-24514ed0a8.svg",
@@ -832,7 +829,7 @@ Total output lines: 4877
         },
         {
           "number": 32,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6825–6835 км",
@@ -853,8 +850,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-032-e75d069631.svg",
@@ -863,7 +860,7 @@ Total output lines: 4877
         },
         {
           "number": 33,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6835–6845 км",
@@ -884,8 +881,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-033-940b8d2b06.svg",
@@ -894,7 +891,7 @@ Total output lines: 4877
         },
         {
           "number": 34,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6845–6855 км",
@@ -915,8 +912,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-034-f0a1e3b22f.svg",
@@ -925,7 +922,7 @@ Total output lines: 4877
         },
         {
           "number": 35,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6855–6865 км",
@@ -946,8 +943,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-035-bb0ae400a3.svg",
@@ -956,7 +953,7 @@ Total output lines: 4877
         },
         {
           "number": 36,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6865–6875 км",
@@ -977,8 +974,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-036-eba39de726.svg",
@@ -987,7 +984,7 @@ Total output lines: 4877
         },
         {
           "number": 37,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6875–6885 км",
@@ -1008,8 +1005,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-037-b1d7c6728b.svg",
@@ -1018,7 +1015,7 @@ Total output lines: 4877
         },
         {
           "number": 38,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6885–6895 км",
@@ -1039,8 +1036,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-038-000133a88c.svg",
@@ -1049,7 +1046,7 @@ Total output lines: 4877
         },
         {
           "number": 39,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6895–6905 км",
@@ -1070,8 +1067,8 @@ Total output lines: 4877
           ],
           "profileBox": [
             0,
-            390.0,
-            843.0,
+            390,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-039-dfde6487ca.svg",
@@ -1080,7 +1077,7 @@ Total output lines: 4877
         },
         {
           "number": 40,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6905–6915 км",
@@ -1102,7 +1099,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             388.66,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-040-53d4f84450.svg",
@@ -1111,7 +1108,7 @@ Total output lines: 4877
         },
         {
           "number": 41,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Направление и путь · лист 41",
@@ -1121,7 +1118,7 @@ Total output lines: 4877
         },
         {
           "number": 42,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6905–6915 км",
@@ -1143,7 +1140,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             384.6,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-042-373a5f1b90.svg",
@@ -1152,7 +1149,7 @@ Total output lines: 4877
         },
         {
           "number": 43,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6895–6905 км",
@@ -1174,7 +1171,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.07,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-043-dde41b3ad0.svg",
@@ -1183,7 +1180,7 @@ Total output lines: 4877
         },
         {
           "number": 44,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6885–6895 км",
@@ -1205,7 +1202,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.24,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-044-b106876fa5.svg",
@@ -1214,7 +1211,7 @@ Total output lines: 4877
         },
         {
           "number": 45,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6875–6885 км",
@@ -1236,7 +1233,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.39,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-045-c82be15fd5.svg",
@@ -1245,7 +1242,7 @@ Total output lines: 4877
         },
         {
           "number": 46,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6865–6875 км",
@@ -1267,7 +1264,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.71,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-046-eb39ca80cd.svg",
@@ -1276,7 +1273,7 @@ Total output lines: 4877
         },
         {
           "number": 47,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6855–6865 км",
@@ -1298,7 +1295,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.24,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-047-d17c7a3967.svg",
@@ -1307,7 +1304,7 @@ Total output lines: 4877
         },
         {
           "number": 48,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6845–6855 км",
@@ -1329,7 +1326,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             388.99,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-048-f11cea0b6d.svg",
@@ -1340,7 +1337,7 @@ Total output lines: 4877
         },
         {
           "number": 49,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6845–6855 км",
@@ -1362,7 +1359,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             388.99,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-049-d3d625e549.svg",
@@ -1373,7 +1370,7 @@ Total output lines: 4877
         },
         {
           "number": 50,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6835–6845 км",
@@ -1395,7 +1392,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.39,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-050-41f4d50013.svg",
@@ -1404,7 +1401,7 @@ Total output lines: 4877
         },
         {
           "number": 51,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6825–6835 км",
@@ -1426,7 +1423,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.98,
-            843.0,
+            843,
             120.33
           ],
           "file": "rail/regimes/chernyshevsk-051-ddf06077cf.svg",
@@ -1435,7 +1432,7 @@ Total output lines: 4877
         },
         {
           "number": 52,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6815–6825 км",
@@ -1457,7 +1454,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.71,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-052-c630f93750.svg",
@@ -1466,7 +1463,7 @@ Total output lines: 4877
         },
         {
           "number": 53,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6805–6815 км",
@@ -1488,7 +1485,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.39,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-053-a88481d13a.svg",
@@ -1497,7 +1494,7 @@ Total output lines: 4877
         },
         {
           "number": 54,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6795–6805 км",
@@ -1519,7 +1516,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.07,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-054-35d5bf6c49.svg",
@@ -1528,7 +1525,7 @@ Total output lines: 4877
         },
         {
           "number": 55,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6785–6795 км",
@@ -1550,7 +1547,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.33,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-055-4003745482.svg",
@@ -1559,7 +1556,7 @@ Total output lines: 4877
         },
         {
           "number": 56,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6775–6785 км",
@@ -1581,7 +1578,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.78,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-056-dc0d4afb3e.svg",
@@ -1590,7 +1587,7 @@ Total output lines: 4877
         },
         {
           "number": 57,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6765–6775 км",
@@ -1612,7 +1609,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.6,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-057-44cd183ee2.svg",
@@ -1621,7 +1618,7 @@ Total output lines: 4877
         },
         {
           "number": 58,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6755–6765 км",
@@ -1643,7 +1640,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.22,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-058-e2d1ced048.svg",
@@ -1652,7 +1649,7 @@ Total output lines: 4877
         },
         {
           "number": 59,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6745–6755 км",
@@ -1674,7 +1671,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.98,
-            843.0,
+            843,
             120.33
           ],
           "file": "rail/regimes/chernyshevsk-059-4f6047dc85.svg",
@@ -1683,7 +1680,7 @@ Total output lines: 4877
         },
         {
           "number": 60,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6735–6745 км",
@@ -1705,7 +1702,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.6,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-060-405e651fbd.svg",
@@ -1714,7 +1711,7 @@ Total output lines: 4877
         },
         {
           "number": 61,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6725–6735 км",
@@ -1736,7 +1733,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             384.78,
-            843.0,
+            843,
             120.33
           ],
           "file": "rail/regimes/chernyshevsk-061-cb7d1be8c3.svg",
@@ -1745,7 +1742,7 @@ Total output lines: 4877
         },
         {
           "number": 62,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6715–6725 км",
@@ -1767,7 +1764,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.546,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-062-3b0fe153f2.svg",
@@ -1776,7 +1773,7 @@ Total output lines: 4877
         },
         {
           "number": 63,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6705–6715 км",
@@ -1798,7 +1795,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.186,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-063-3d5515e6da.svg",
@@ -1807,7 +1804,7 @@ Total output lines: 4877
         },
         {
           "number": 64,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6695–6705 км",
@@ -1829,7 +1826,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             386.016,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-064-557903c4d4.svg",
@@ -1838,7 +1835,7 @@ Total output lines: 4877
         },
         {
           "number": 65,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6685–6695 км",
@@ -1860,7 +1857,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             387.076,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-065-2fa9af3d78.svg",
@@ -1869,7 +1866,7 @@ Total output lines: 4877
         },
         {
           "number": 66,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6675–6685 км",
@@ -1891,7 +1888,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.25,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-066-42e47b4eee.svg",
@@ -1900,7 +1897,7 @@ Total output lines: 4877
         },
         {
           "number": 67,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6665–6675 км",
@@ -1922,7 +1919,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.556,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-067-6d87216a50.svg",
@@ -1931,7 +1928,7 @@ Total output lines: 4877
         },
         {
           "number": 68,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6655–6665 км",
@@ -1953,8 +1950,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.726,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/chernyshevsk-068-c943f7e58f.svg",
           "sha256": "c943f7e58f6bb052230344c1199a8284d727630fa13cc364917b3431e39cafc6",
@@ -1962,7 +1959,7 @@ Total output lines: 4877
         },
         {
           "number": 69,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6645–6655 км",
@@ -1984,7 +1981,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             390.796,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-069-8e22c34f78.svg",
@@ -1993,7 +1990,7 @@ Total output lines: 4877
         },
         {
           "number": 70,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6635–6645 км",
@@ -2015,8 +2012,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.056,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/chernyshevsk-070-50efac2771.svg",
           "sha256": "50efac2771e8265fc98ddc18b0df4b9135fb52e587e5c712548bb35873d81f9d",
@@ -2024,7 +2021,7 @@ Total output lines: 4877
         },
         {
           "number": 71,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6625–6635 км",
@@ -2046,7 +2043,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             385.346,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-071-7860fe8979.svg",
@@ -2055,7 +2052,7 @@ Total output lines: 4877
         },
         {
           "number": 72,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6615–6625 км",
@@ -2077,8 +2074,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             388.826,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/chernyshevsk-072-6280a16dee.svg",
           "sha256": "6280a16dee9c3e0bb1e4d557f95e0970d82250b34c634f84dd6a466da2e533c3",
@@ -2086,7 +2083,7 @@ Total output lines: 4877
         },
         {
           "number": 73,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6605–6615 км",
@@ -2108,7 +2105,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             381.97,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-073-b8cfc6fffa.svg",
@@ -2117,7 +2114,7 @@ Total output lines: 4877
         },
         {
           "number": 74,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6595–6605 км",
@@ -2139,7 +2136,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.2,
-            843.0,
+            843,
             120.52
           ],
           "file": "rail/regimes/chernyshevsk-074-de95d11bec.svg",
@@ -2148,7 +2145,7 @@ Total output lines: 4877
         },
         {
           "number": 75,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6585–6595 км",
@@ -2170,7 +2167,7 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.92,
-            843.0,
+            843,
             120.32
           ],
           "file": "rail/regimes/chernyshevsk-075-c238a909a6.svg",
@@ -2179,7 +2176,7 @@ Total output lines: 4877
         },
         {
           "number": 76,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Чернышевск восточная горловина · лист 76",
@@ -2189,7 +2186,7 @@ Total output lines: 4877
         },
         {
           "number": 77,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Чернышевск восточная горловина · лист 77",
@@ -2199,7 +2196,7 @@ Total output lines: 4877
         },
         {
           "number": 78,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Чернышевск западная горловина · лист 78",
@@ -2209,7 +2206,7 @@ Total output lines: 4877
         },
         {
           "number": 79,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Станционная схема · лист 79",
@@ -2219,7 +2216,7 @@ Total output lines: 4877
         },
         {
           "number": 80,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Станционная схема · лист 80",
@@ -2229,7 +2226,7 @@ Total output lines: 4877
         },
         {
           "number": 81,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Жирекен · лист 81",
@@ -2239,7 +2236,7 @@ Total output lines: 4877
         },
         {
           "number": 82,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Арчикой · лист 82",
@@ -2249,7 +2246,7 @@ Total output lines: 4877
         },
         {
           "number": 83,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Зилово западная горловина · лист 83",
@@ -2259,7 +2256,7 @@ Total output lines: 4877
         },
         {
           "number": 84,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Зилово восточная горловина · лист 84",
@@ -2269,7 +2266,7 @@ Total output lines: 4877
         },
         {
           "number": 85,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Зилово восточная горловина · лист 85",
@@ -2279,7 +2276,7 @@ Total output lines: 4877
         },
         {
           "number": 86,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Зудыра · лист 86",
@@ -2289,7 +2286,7 @@ Total output lines: 4877
         },
         {
           "number": 87,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Ульякан · лист 87",
@@ -2299,11 +2296,177 @@ Total output lines: 4877
         },
         {
           "number": 88,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Урюм · лист 88",
-          "file": "ra…1515 tokens truncated…0,
+          "file": "rail/regimes/chernyshevsk-088-c46f07cd29.svg",
+          "sha256": "c46f07cd2932024bc36e8fcd3a72d3926ab3648066eaa21cd50c27e48e4e6c60",
+          "bytes": 308772
+        },
+        {
+          "number": 89,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Нанагры · лист 89",
+          "file": "rail/regimes/chernyshevsk-089-db742ae955.svg",
+          "sha256": "db742ae9554eebd5e1e2b5fd10bf113eabc6a0bd70826357530b94e082d2892c",
+          "bytes": 175331
+        },
+        {
+          "number": 90,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Нанагры · лист 90",
+          "file": "rail/regimes/chernyshevsk-090-bedfc44908.svg",
+          "sha256": "bedfc44908bd8809dca792da80b4afb009e45a795ab8d4894aab2eb24bdd1ee1",
+          "bytes": 174963
+        },
+        {
+          "number": 91,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Кендагиры · лист 91",
+          "file": "rail/regimes/chernyshevsk-091-ebbced3f4d.svg",
+          "sha256": "ebbced3f4d29840c78f55054b49e689393e7840f952b13f3fb404fb08616155d",
+          "bytes": 196483
+        },
+        {
+          "number": 92,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Ксеньевская · лист 92",
+          "file": "rail/regimes/chernyshevsk-092-435dcefa75.svg",
+          "sha256": "435dcefa759eff40e69b83aa1cd2688435a2e2a98e712942b02bcc4b16c0696c",
+          "bytes": 440921
+        },
+        {
+          "number": 93,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Кислый Ключ · лист 93",
+          "file": "rail/regimes/chernyshevsk-093-9a77847bae.svg",
+          "sha256": "9a77847bae1cea9ed97d860f28829acee18f2464ba574708376e1398fd75d35b",
+          "bytes": 293833
+        },
+        {
+          "number": 94,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Артеушка · лист 94",
+          "file": "rail/regimes/chernyshevsk-094-ba9f88c73e.svg",
+          "sha256": "ba9f88c73ed42ca8d219b088721a0993072979324c1997913120d92aa11b2b62",
+          "bytes": 318503
+        },
+        {
+          "number": 95,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Пеньковая · лист 95",
+          "file": "rail/regimes/chernyshevsk-095-ea219fabbf.svg",
+          "sha256": "ea219fabbf5fae429aa61cc9e2f99a1c02e6489d25f1a3e6bd141df04cf8d505",
+          "bytes": 295052
+        },
+        {
+          "number": 96,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Могоча · лист 96",
+          "file": "rail/regimes/chernyshevsk-096-550def30be.svg",
+          "sha256": "550def30be428e55967aa1c1c79b5a847e11ed614bd7c1ea5696c2504270bc4e",
+          "bytes": 462391
+        },
+        {
+          "number": 97,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Могоча · лист 97",
+          "file": "rail/regimes/chernyshevsk-097-77aef73a4f.svg",
+          "sha256": "77aef73a4fe6901afb6fbba264288b2944758191e9e0d7ce6b8621ca1eddbb85",
+          "bytes": 693100
+        },
+        {
+          "number": 98,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Могоча четный парк · лист 98",
+          "file": "rail/regimes/chernyshevsk-098-dbd8e062e7.svg",
+          "sha256": "dbd8e062e77834443cf109fc1e41d13a8e7bfebc69a6c5f75288c717f2c8eafe",
+          "bytes": 1535039
+        },
+        {
+          "number": 99,
+          "width": 843,
+          "height": 596.25,
+          "kind": "station",
+          "title": "ст. Могоча четный парк восточная · лист 99",
+          "file": "rail/regimes/chernyshevsk-099-df08bafe49.svg",
+          "sha256": "df08bafe4958edfd481efafc651b1dd8d02e9e7eb3a66d9853b1ec625f10316f",
+          "bytes": 1075366
+        }
+      ]
+    },
+    {
+      "id": "urusha",
+      "name": "Могоча — Уруша",
+      "file": "rail/regimes/urusha-3b637bc1db.pdf",
+      "sha256": "3b637bc1dbb661924d8100fcead10085c3fd2a829d02129c962b2c0cfdefc9c0",
+      "bytes": 6247444,
+      "pages": 93,
+      "leaves": [
+        {
+          "number": 1,
+          "width": 843,
+          "height": 596.25,
+          "kind": "reference",
+          "title": "Титульный лист",
+          "file": "rail/regimes/urusha-001-60483b2396.svg",
+          "sha256": "60483b239602d7cac399480a6d4ce907d27da9b8dcd9cb60680aaf4d844e0d6a",
+          "bytes": 1020211
+        },
+        {
+          "number": 2,
+          "width": 843,
+          "height": 596.25,
+          "kind": "reference",
+          "title": "Согласование и утверждение",
+          "file": "rail/regimes/urusha-002-1173fe5e13.svg",
+          "sha256": "1173fe5e13d7592ed0f99f78bc697db79a34461666230e325fe2905fda0dc1c1",
+          "bytes": 372060
+        },
+        {
+          "number": 3,
+          "width": 843,
+          "height": 596.25,
+          "kind": "reference",
+          "title": "Разработчик",
+          "file": "rail/regimes/urusha-003-e393d5c649.svg",
+          "sha256": "e393d5c6499026f7dee0bca32826a5c8a404e806a1369501f49a8c1677c8e1d6",
+          "bytes": 92146
+        },
+        {
+          "number": 4,
+          "width": 843,
+          "height": 596.25,
+          "kind": "reference",
+          "title": "Условные обозначения",
+          "file": "rail/regimes/urusha-004-8fa8031fbb.svg",
+          "sha256": "8fa8031fbb2d9ff03e16093cba3150d6a33d69cb6a5b2cfacd9539bb345be36e",
+          "bytes": 460954
+        },
+        {
+          "number": 5,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Таблица из документа",
@@ -2313,7 +2476,7 @@ Total output lines: 4877
         },
         {
           "number": 6,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Порядок из документа",
@@ -2323,7 +2486,7 @@ Total output lines: 4877
         },
         {
           "number": 7,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Направление и путь · лист 7",
@@ -2333,7 +2496,7 @@ Total output lines: 4877
         },
         {
           "number": 8,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6895–6905 км",
@@ -2355,8 +2518,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             391.216,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-008-919f54b4ac.svg",
           "sha256": "919f54b4ac47e4dd8e8a6b1b8cd81c433303d529c8c4c8398ec74f5cf656f9a7",
@@ -2364,7 +2527,7 @@ Total output lines: 4877
         },
         {
           "number": 9,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6905–6915 км",
@@ -2386,8 +2549,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             391.216,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-009-e466e43db7.svg",
           "sha256": "e466e43db7d753460b3c220c43cad6387df930494f97b7d548d4e1ea1e1563b7",
@@ -2395,7 +2558,7 @@ Total output lines: 4877
         },
         {
           "number": 10,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6915–6925 км",
@@ -2417,8 +2580,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             391.216,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-010-6d6fcc1813.svg",
           "sha256": "6d6fcc18139804ce5aa2297d51d5dbb2c217b691acab668779dc7d65cd61ac33",
@@ -2426,7 +2589,7 @@ Total output lines: 4877
         },
         {
           "number": 11,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6925–6935 км",
@@ -2448,8 +2611,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-011-850ac3de77.svg",
           "sha256": "850ac3de7784fd007a93da48bce9e298b2a0f113c9cc8f2ca232dcc0f6f845c9",
@@ -2457,7 +2620,7 @@ Total output lines: 4877
         },
         {
           "number": 12,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6935–6945 км",
@@ -2479,8 +2642,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-012-a4afc2bc7c.svg",
           "sha256": "a4afc2bc7c2e38f66c6310355366b569530b48986e1c5caa9236ddd68a14bcea",
@@ -2488,7 +2651,7 @@ Total output lines: 4877
         },
         {
           "number": 13,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6945–6955 км",
@@ -2510,8 +2673,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-013-5dd06063a0.svg",
           "sha256": "5dd06063a004044d6df34f2631474a6a895d719e5c201a8eb61431a6ae743f7d",
@@ -2519,7 +2682,7 @@ Total output lines: 4877
         },
         {
           "number": 14,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6955–6965 км",
@@ -2541,8 +2704,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-014-4f763e7f32.svg",
           "sha256": "4f763e7f32f0b0cd0032e78cf6ce0d2fc25866198f15ca1d2c33c90bca265e81",
@@ -2550,7 +2713,7 @@ Total output lines: 4877
         },
         {
           "number": 15,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6965–6975 км",
@@ -2572,8 +2735,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-015-48619b5d0a.svg",
           "sha256": "48619b5d0a168860c2f687068abe56a3ed10b28fd36e5a92e74be2e4936ea844",
@@ -2581,7 +2744,7 @@ Total output lines: 4877
         },
         {
           "number": 16,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6975–6985 км",
@@ -2603,8 +2766,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-016-3fa5fa8daa.svg",
           "sha256": "3fa5fa8daa330f4b0b92266f740dc9fe2126eb3875780309bfb189dba3cd99fe",
@@ -2612,7 +2775,7 @@ Total output lines: 4877
         },
         {
           "number": 17,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6985–6995 км",
@@ -2634,8 +2797,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-017-ed1abf4f7f.svg",
           "sha256": "ed1abf4f7f0c617b327956def6f6b21febaf0e325dcbc23652ceb94b255fb746",
@@ -2643,7 +2806,7 @@ Total output lines: 4877
         },
         {
           "number": 18,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6995–7005 км",
@@ -2665,8 +2828,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-018-364b7bffee.svg",
           "sha256": "364b7bffeefce29e1df0be0f1dd634a63cea4a5d9b552ef2d8fcfad14fa3b985",
@@ -2674,7 +2837,7 @@ Total output lines: 4877
         },
         {
           "number": 19,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7005–7015 км",
@@ -2696,8 +2859,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             391.216,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-019-a25395abee.svg",
           "sha256": "a25395abee5c84312fe75c59f45c4eaed30e4a8b03ec3cc189cc1280346e9a57",
@@ -2705,7 +2868,7 @@ Total output lines: 4877
         },
         {
           "number": 20,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7015–7025 км",
@@ -2727,8 +2890,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-020-fa45b2bb25.svg",
           "sha256": "fa45b2bb258261154c001033622d49c907957c07cfc627a3aad784a79960328d",
@@ -2736,7 +2899,7 @@ Total output lines: 4877
         },
         {
           "number": 21,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7025–7035 км",
@@ -2758,8 +2921,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-021-acbece9270.svg",
           "sha256": "acbece92700e2b91287b8f177f19502d74e5bb439b39498e0db3e994c181c189",
@@ -2767,7 +2930,7 @@ Total output lines: 4877
         },
         {
           "number": 22,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7035–7045 км",
@@ -2789,8 +2952,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-022-ec3924980a.svg",
           "sha256": "ec3924980ab4905c65c25ced72ef8f3f134806bd7f743341517dfb16a0517262",
@@ -2798,7 +2961,7 @@ Total output lines: 4877
         },
         {
           "number": 23,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7045–7055 км",
@@ -2820,8 +2983,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-023-fdf7414aa7.svg",
           "sha256": "fdf7414aa779c936f4531d52305740ad7595b48df25b35e32568f6378eba0c8e",
@@ -2829,7 +2992,7 @@ Total output lines: 4877
         },
         {
           "number": 24,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7055–7065 км",
@@ -2851,8 +3014,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-024-a6b30c9503.svg",
           "sha256": "a6b30c950312a06e2432287f7ebd33f5a26859e944392f62c1301c1081ec922b",
@@ -2860,7 +3023,7 @@ Total output lines: 4877
         },
         {
           "number": 25,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7065–7075 км",
@@ -2882,8 +3045,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-025-4f52147068.svg",
           "sha256": "4f52147068e46cfbc9ccd2cbf46bd3124edb8cf62159983e7b0f9d1023f4a7fe",
@@ -2891,7 +3054,7 @@ Total output lines: 4877
         },
         {
           "number": 26,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7075–7085 км",
@@ -2913,8 +3076,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-026-a2089bdc00.svg",
           "sha256": "a2089bdc0013bc7451069380d528b0aa6390cd230721aeb2275da145186d68be",
@@ -2922,7 +3085,7 @@ Total output lines: 4877
         },
         {
           "number": 27,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7085–7095 км",
@@ -2944,8 +3107,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-027-f1f3ced54f.svg",
           "sha256": "f1f3ced54f9b433a98578b5b42f4a2492e99b2b56256e161eadb5d06a1cb0e76",
@@ -2953,7 +3116,7 @@ Total output lines: 4877
         },
         {
           "number": 28,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7095–7105 км",
@@ -2975,8 +3138,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-028-9e9395ad3b.svg",
           "sha256": "9e9395ad3b0fd6f0936cbc6989006a25a641954e541ac744c8cb55095aa07c3b",
@@ -2984,7 +3147,7 @@ Total output lines: 4877
         },
         {
           "number": 29,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7105–7115 км",
@@ -3006,8 +3169,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-029-4c10b2f99b.svg",
           "sha256": "4c10b2f99ba129c38220e8a3881dbe31dbd92c3e1b9ead8b51ce311e227a2466",
@@ -3015,7 +3178,7 @@ Total output lines: 4877
         },
         {
           "number": 30,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7115–7125 км",
@@ -3037,8 +3200,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-030-c889525715.svg",
           "sha256": "c88952571509d79fffc2b11fa4f1d20057acf52e44960cf61ce83edca37496f9",
@@ -3046,7 +3209,7 @@ Total output lines: 4877
         },
         {
           "number": 31,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7125–7135 км",
@@ -3068,8 +3231,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-031-6067f3dc37.svg",
           "sha256": "6067f3dc370d1d3b532a77dc3ea902a6d2bbe4e3a59935376e3004ff11e8c71d",
@@ -3077,7 +3240,7 @@ Total output lines: 4877
         },
         {
           "number": 32,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7135–7145 км",
@@ -3099,8 +3262,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-032-b80f47914f.svg",
           "sha256": "b80f47914f3a19ffec3ec3971a71e460b63f8b52aefe7ebcb8fbb16171ad344f",
@@ -3108,7 +3271,7 @@ Total output lines: 4877
         },
         {
           "number": 33,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7145–7155 км",
@@ -3130,8 +3293,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-033-fb7df8c356.svg",
           "sha256": "fb7df8c3567e66b5188c082821bf1ab9a04fe72a5b91d04e918efcf94bcb8338",
@@ -3139,7 +3302,7 @@ Total output lines: 4877
         },
         {
           "number": 34,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7155–7165 км",
@@ -3161,8 +3324,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-034-1586fa4e01.svg",
           "sha256": "1586fa4e01033c9c9aab838d472832dd08e39d1267c46b5ba0e6289cacf3e049",
@@ -3170,7 +3333,7 @@ Total output lines: 4877
         },
         {
           "number": 35,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7165–7175 км",
@@ -3192,8 +3355,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-035-4db04a27ed.svg",
           "sha256": "4db04a27ed63ad2c615afc2cfdcc1d43522a6ca62d59ae2bd199885f8c00f046",
@@ -3201,7 +3364,7 @@ Total output lines: 4877
         },
         {
           "number": 36,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7175–7185 км",
@@ -3223,8 +3386,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-036-cd8c96eae2.svg",
           "sha256": "cd8c96eae2bc33042a171ce5eb9f4a99cb1169b9b9ab817faad95ba591f74320",
@@ -3232,7 +3395,7 @@ Total output lines: 4877
         },
         {
           "number": 37,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7185–7195 км",
@@ -3254,8 +3417,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-037-f345504e06.svg",
           "sha256": "f345504e06b077798f67fd323f4e14a8a0e31cb13d0fff25e4ed9c58271070c8",
@@ -3263,7 +3426,7 @@ Total output lines: 4877
         },
         {
           "number": 38,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7195–7205 км",
@@ -3285,8 +3448,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-038-7c5e176a48.svg",
           "sha256": "7c5e176a4892dc582ebe95646be14acb724cf604d60707bcacb52df99529db23",
@@ -3294,7 +3457,7 @@ Total output lines: 4877
         },
         {
           "number": 39,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7205–7215 км",
@@ -3316,8 +3479,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-039-5d9e728e2f.svg",
           "sha256": "5d9e728e2f8530383fe8cb0a1bd683f720deb7d970d903f01688deac7638a296",
@@ -3325,7 +3488,7 @@ Total output lines: 4877
         },
         {
           "number": 40,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "reference",
           "title": "Направление и путь · лист 40",
@@ -3335,7 +3498,7 @@ Total output lines: 4877
         },
         {
           "number": 41,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7205–7215 км",
@@ -3357,8 +3520,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-041-bd39865227.svg",
           "sha256": "bd398652270dabdd606046199b36fbda6430c44645e4b90aa9a7f880b2bfbfc2",
@@ -3366,7 +3529,7 @@ Total output lines: 4877
         },
         {
           "number": 42,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7195–7205 км",
@@ -3388,8 +3551,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-042-8a23c0e0fb.svg",
           "sha256": "8a23c0e0fb2e1911b15a06bf20ebaa3065073041ad4fe5105f12fd0367aab56b",
@@ -3397,7 +3560,7 @@ Total output lines: 4877
         },
         {
           "number": 43,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7185–7195 км",
@@ -3419,8 +3582,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-043-633fc6d703.svg",
           "sha256": "633fc6d70393e21b494a1c6f0a1000fa53f656ed35813017471e570876bcbbb7",
@@ -3428,7 +3591,7 @@ Total output lines: 4877
         },
         {
           "number": 44,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7175–7185 км",
@@ -3450,8 +3613,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-044-21c3a1ec7f.svg",
           "sha256": "21c3a1ec7f0c01d3440f43aac8aa7fd1d3c1dca7547e7fc7c02f2ee8ee9c31e1",
@@ -3459,7 +3622,7 @@ Total output lines: 4877
         },
         {
           "number": 45,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7165–7175 км",
@@ -3481,8 +3644,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-045-0512309d38.svg",
           "sha256": "0512309d387227b664c2f353dc8b2eec494109e643a860e85b570d41ba937e6d",
@@ -3490,7 +3653,7 @@ Total output lines: 4877
         },
         {
           "number": 46,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7155–7165 км",
@@ -3512,8 +3675,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-046-bf9e8f7569.svg",
           "sha256": "bf9e8f756982d33b95a57e7ebaa41c0b9d8356052e1f44a3aab16a5d59a7fef1",
@@ -3521,7 +3684,7 @@ Total output lines: 4877
         },
         {
           "number": 47,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7145–7155 км",
@@ -3543,8 +3706,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-047-c402612154.svg",
           "sha256": "c402612154c67dc853109350a775fc15e3e58e8c2aeab7a48dabd5eca255d087",
@@ -3552,7 +3715,7 @@ Total output lines: 4877
         },
         {
           "number": 48,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7135–7145 км",
@@ -3574,8 +3737,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-048-f06bacb14f.svg",
           "sha256": "f06bacb14fc1ffbdd07abcfd855037cede4000156f37feebcc8a4869c3f03ae8",
@@ -3583,7 +3746,7 @@ Total output lines: 4877
         },
         {
           "number": 49,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7125–7135 км",
@@ -3605,8 +3768,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-049-8bf6f5d649.svg",
           "sha256": "8bf6f5d6493c0b01caa0584f878ffc109af63edd535bdbd419ea642427680e85",
@@ -3614,7 +3777,7 @@ Total output lines: 4877
         },
         {
           "number": 50,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7115–7125 км",
@@ -3636,8 +3799,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-050-994a631c6d.svg",
           "sha256": "994a631c6db2bf06425adabe5c53a5327668d96f749da0d65ad23156d1454d22",
@@ -3645,7 +3808,7 @@ Total output lines: 4877
         },
         {
           "number": 51,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7105–7115 км",
@@ -3667,8 +3830,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-051-ee0812b8f9.svg",
           "sha256": "ee0812b8f98538274f0245b8e6a689ddf6c08120a453e7b6f17cbc2c73b4ecd9",
@@ -3676,7 +3839,7 @@ Total output lines: 4877
         },
         {
           "number": 52,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7095–7105 км",
@@ -3698,8 +3861,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-052-71fb2a3448.svg",
           "sha256": "71fb2a3448a750fa309ee5c767838029746809d208c7c44e562cb32429a504e9",
@@ -3707,7 +3870,7 @@ Total output lines: 4877
         },
         {
           "number": 53,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7085–7095 км",
@@ -3729,8 +3892,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-053-a852c52977.svg",
           "sha256": "a852c52977f67ac6f16a361048e320504474c3feebffe5ca686a6a9cfcfc7c59",
@@ -3738,7 +3901,7 @@ Total output lines: 4877
         },
         {
           "number": 54,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7075–7085 км",
@@ -3760,8 +3923,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-054-724112d769.svg",
           "sha256": "724112d769d8f13cc2db40f2c81e7d81b4b85059679e66db2f49f04bc7cbbd35",
@@ -3769,7 +3932,7 @@ Total output lines: 4877
         },
         {
           "number": 55,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7065–7075 км",
@@ -3791,8 +3954,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-055-841c6f247f.svg",
           "sha256": "841c6f247f8a3c570fa9a03aa61f7b9c1f44e95581b42232974be7de19a40f3f",
@@ -3800,7 +3963,7 @@ Total output lines: 4877
         },
         {
           "number": 56,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7055–7065 км",
@@ -3822,8 +3985,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-056-26f80ca3e1.svg",
           "sha256": "26f80ca3e12940196e02597517809983c60c5c04e0c5e0fb7efe0250a37ca751",
@@ -3831,7 +3994,7 @@ Total output lines: 4877
         },
         {
           "number": 57,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7045–7055 км",
@@ -3853,8 +4016,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-057-c3db218eac.svg",
           "sha256": "c3db218eac5064b5b1f6f7cbc36ab4c18684438d44b4e2ce566c3b5c1cb04d8d",
@@ -3862,7 +4025,7 @@ Total output lines: 4877
         },
         {
           "number": 58,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7035–7045 км",
@@ -3884,8 +4047,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-058-29508b04aa.svg",
           "sha256": "29508b04aa7b63689d906adc2df965641a98cd99e44c1f341ca622c7afb1c6c5",
@@ -3893,7 +4056,7 @@ Total output lines: 4877
         },
         {
           "number": 59,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7025–7035 км",
@@ -3915,8 +4078,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-059-3c674a3a4f.svg",
           "sha256": "3c674a3a4f78dba6f2aeffbbeff552900a41e14b08c9d427919e62be0c282806",
@@ -3924,7 +4087,7 @@ Total output lines: 4877
         },
         {
           "number": 60,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7015–7025 км",
@@ -3946,8 +4109,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-060-dbf46c3af7.svg",
           "sha256": "dbf46c3af71e840210ace8ef36cb6b5a72cecda643965e0ad2bc798c06fe1bfb",
@@ -3955,7 +4118,7 @@ Total output lines: 4877
         },
         {
           "number": 61,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "7005–7015 км",
@@ -3977,8 +4140,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             377.036,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-061-20b5ef5bc5.svg",
           "sha256": "20b5ef5bc588b7cd0094a797fa39c38061b70510281f8b4047c56910d5a4e192",
@@ -3986,7 +4149,7 @@ Total output lines: 4877
         },
         {
           "number": 62,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6995–7005 км",
@@ -4008,8 +4171,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-062-97f498256e.svg",
           "sha256": "97f498256e82a36ae770f58f941d55ffd1eed52d6fe0d53c9090620cbbbcade6",
@@ -4017,7 +4180,7 @@ Total output lines: 4877
         },
         {
           "number": 63,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6985–6995 км",
@@ -4039,8 +4202,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-063-703821c342.svg",
           "sha256": "703821c342e7ab3a7d4a2c1cff9ed9cef0569b836f058ca1d541dfb61dd2343a",
@@ -4048,7 +4211,7 @@ Total output lines: 4877
         },
         {
           "number": 64,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6975–6985 км",
@@ -4070,8 +4233,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-064-ac16f9b442.svg",
           "sha256": "ac16f9b442a5030b3767f69eda22cbbee5c06ec122375273989f6e38400d5270",
@@ -4079,7 +4242,7 @@ Total output lines: 4877
         },
         {
           "number": 65,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6965–6975 км",
@@ -4101,8 +4264,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-065-0dda9489ba.svg",
           "sha256": "0dda9489ba9b37da463df66300d97214154cc28f91755777ec6c735d16843a92",
@@ -4110,7 +4273,7 @@ Total output lines: 4877
         },
         {
           "number": 66,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6955–6965 км",
@@ -4132,8 +4295,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-066-4a1bbc9c47.svg",
           "sha256": "4a1bbc9c472b0531ec6366c9406b53c5be8e802a0df35de79d2f2e7882a6e73f",
@@ -4141,7 +4304,7 @@ Total output lines: 4877
         },
         {
           "number": 67,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6945–6955 км",
@@ -4163,8 +4326,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-067-0fea8084ad.svg",
           "sha256": "0fea8084ade4ae9c001b0093e5c6e0cd0b824048459e0f533c7bca9fadc222eb",
@@ -4172,7 +4335,7 @@ Total output lines: 4877
         },
         {
           "number": 68,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6935–6945 км",
@@ -4194,8 +4357,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-068-80057075f8.svg",
           "sha256": "80057075f8c2fb4b1b41c74f7bf8c77d1757bc5c1e17f79c2deac4c54a25cf23",
@@ -4203,7 +4366,7 @@ Total output lines: 4877
         },
         {
           "number": 69,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6925–6935 км",
@@ -4225,8 +4388,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-069-6cfcd2446e.svg",
           "sha256": "6cfcd2446e7f8a2d0cb231c27a0777a4e1f25516a6fa4d00909a5275306fd683",
@@ -4234,7 +4397,7 @@ Total output lines: 4877
         },
         {
           "number": 70,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6915–6925 км",
@@ -4256,8 +4419,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-070-4d6ba8b9c9.svg",
           "sha256": "4d6ba8b9c91cbe34a50b73445089ecad221e29cb8fddc4837f5fdbc808dcbf98",
@@ -4265,7 +4428,7 @@ Total output lines: 4877
         },
         {
           "number": 71,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6905–6915 км",
@@ -4287,8 +4450,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             389.186,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-071-cb98bf11ee.svg",
           "sha256": "cb98bf11ee717666ae5dcc9625f9f89faa58e0600be0313e9ad60758dbce5a9b",
@@ -4296,7 +4459,7 @@ Total output lines: 4877
         },
         {
           "number": 72,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "profile",
           "title": "6895–6905 км",
@@ -4318,8 +4481,8 @@ Total output lines: 4877
           "profileBox": [
             0,
             377.036,
-            843.0,
-            120.0
+            843,
+            120
           ],
           "file": "rail/regimes/urusha-072-65614a6b53.svg",
           "sha256": "65614a6b53ff0c944598d9943fab767feb404c88da1d81c336be3273b9638236",
@@ -4327,7 +4490,7 @@ Total output lines: 4877
         },
         {
           "number": 73,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Могоча нечетный парк · лист 73",
@@ -4337,7 +4500,7 @@ Total output lines: 4877
         },
         {
           "number": 74,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Могоча нечетный парк · лист 74",
@@ -4347,7 +4510,7 @@ Total output lines: 4877
         },
         {
           "number": 75,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Могоча четный парк · лист 75",
@@ -4357,7 +4520,7 @@ Total output lines: 4877
         },
         {
           "number": 76,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Могоча четный парк · лист 76",
@@ -4367,7 +4530,7 @@ Total output lines: 4877
         },
         {
           "number": 77,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Таптугары · лист 77",
@@ -4377,7 +4540,7 @@ Total output lines: 4877
         },
         {
           "number": 78,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Семиозерный · лист 78",
@@ -4387,7 +4550,7 @@ Total output lines: 4877
         },
         {
           "number": 79,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Германовский · лист 79",
@@ -4397,7 +4560,7 @@ Total output lines: 4877
         },
         {
           "number": 80,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Амазар западная горловина · лист 80",
@@ -4407,7 +4570,7 @@ Total output lines: 4877
         },
         {
           "number": 81,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Амазар восточная горловина · лист 81",
@@ -4417,7 +4580,7 @@ Total output lines: 4877
         },
         {
           "number": 82,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Колокольный · лист 82",
@@ -4427,7 +4590,7 @@ Total output lines: 4877
         },
         {
           "number": 83,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Чичатка · лист 83",
@@ -4437,7 +4600,7 @@ Total output lines: 4877
         },
         {
           "number": 84,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Жанна · лист 84",
@@ -4447,7 +4610,7 @@ Total output lines: 4877
         },
         {
           "number": 85,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Малоковали · лист 85",
@@ -4457,7 +4620,7 @@ Total output lines: 4877
         },
         {
           "number": 86,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Аячи · лист 86",
@@ -4467,7 +4630,7 @@ Total output lines: 4877
         },
         {
           "number": 87,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Ерофей Павлович западная горловина · лист 87",
@@ -4477,7 +4640,7 @@ Total output lines: 4877
         },
         {
           "number": 88,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "Ст. Ерофей Павлович восточная горловина · лист 88",
@@ -4487,7 +4650,7 @@ Total output lines: 4877
         },
         {
           "number": 89,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Сегачама · лист 89",
@@ -4497,7 +4660,7 @@ Total output lines: 4877
         },
         {
           "number": 90,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Большая Омутная · лист 90",
@@ -4507,7 +4670,7 @@ Total output lines: 4877
         },
         {
           "number": 91,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Сгибеево · лист 91",
@@ -4517,7 +4680,7 @@ Total output lines: 4877
         },
         {
           "number": 92,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Уруша западная горловина · лист 92",
@@ -4527,7 +4690,7 @@ Total output lines: 4877
         },
         {
           "number": 93,
-          "width": 843.0,
+          "width": 843,
           "height": 596.25,
           "kind": "station",
           "title": "ст. Уруша восточная горловина · лист 93",
