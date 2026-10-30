@@ -8,19 +8,22 @@
   if(xml.querySelector('parsererror'))throw Error('Ошибка схемы листа');
   const groups=[];
   for(const u of xml.querySelectorAll('use[x][y]')){
-   if(+u.getAttribute('y')>50)continue;
+   if(+u.getAttribute('y')>Math.min(120,page.height*.2))continue;
    const x=+u.getAttribute('x'),y=+u.getAttribute('y');
    let g=groups.find(g=>Math.abs(g.y-y)<1&&Math.abs(g.last-x)<13);
    if(!g){g={y,x,last:x,n:0};groups.push(g)}g.last=x;g.n++;
   }
-  const labels=groups.filter(g=>g.n===4).sort((a,b)=>a.x-b.x),order=page.kmOrder;
+  const order=page.kmOrder,rows=[];
+  for(const g of groups.filter(g=>g.n===4)){let row=rows.find(r=>Math.abs(r.y-g.y)<1);if(!row){row={y:g.y,labels:[]};rows.push(row)}row.labels.push(g)}
+  const row=rows.filter(r=>r.labels.length===order?.length).sort((a,b)=>a.y-b.y)[0];
+  const labels=(row?.labels||[]).sort((a,b)=>a.x-b.x);
   if(labels.length!==order?.length||order.length<2)throw Error('Не удалось точно сопоставить километровую сетку');
   const points=labels.map((g,i)=>[order[i]*1000+500,(g.x+g.last+10)/2]);
   const mean=points.reduce((a,p)=>a+p[0],0)/points.length,ym=points.reduce((a,p)=>a+p[1],0)/points.length;
   const a=points.reduce((n,p)=>n+(p[0]-mean)*(p[1]-ym),0)/points.reduce((n,p)=>n+(p[0]-mean)**2,0),b=ym-a*mean;
   // Reject irregular grids rather than silently stretching them to a wrong km.
   if(points.some(p=>Math.abs(a*p[0]+b-p[1])>8))throw Error('Неравномерная сетка: откройте исходный лист');
-  return {a,b,width:page.width,height:page.height,trace:trackTrace(xml,page)};
+  return {a,b,width:page.width,height:page.height,speedTop:row.y+12,trace:trackTrace(xml,page)};
  }
  // Sample only the document's long black route curve, outside the glyph definitions.
  function trackTrace(xml,page){
@@ -61,11 +64,25 @@
   }
   const values=[0,...shifts.values()],min=Math.min(...values),max=Math.max(...values);return {shifts,min,scale:1+max-min};
  }
+ // Each source loads once, independently of GPS ticks and other source failures.
+ function createPageStore(load,onChange,now=()=>Date.now()){
+  const records=new Map();
+  return {
+   get:p=>records.get(p.file)?.value,
+   status:p=>records.get(p.file)?.status||'missing',
+   error:p=>records.get(p.file)?.error,
+   request(p){
+    const old=records.get(p.file);if(old&&(old.status!=='failed'||now()-old.at<30000))return old.promise;
+    const record={status:'pending',at:now()};records.set(p.file,record);
+    record.promise=Promise.resolve().then(()=>load(p)).then(value=>{record.value=value;record.status='ready';onChange();return value},error=>{record.error=error;record.at=now();record.status='failed';onChange();return null});return record.promise;
+   }
+  };
+ }
  function create(viewer){
   const host=$('driverPanel');if(!host)return;
   host.innerHTML=`<div class="driverHead"><div><small>ЭЛЕКТРОННЫЙ ПРОФИЛЬ</small><strong id="driverPosition">—</strong><span id="driverMode" class="driverMode">Ручной просмотр</span></div><div class="driverSpeed"><b id="driverSpeed">—</b><span>км/ч · GPS</span></div></div><div class="driverRoute" id="driverRoute"></div><div class="driverActions"><button id="driverGPS">Включить GPS</button><button id="driverSetup">Участок / км</button></div><div class="driverScales" role="group" aria-label="Ширина обзора"><span>Обзор</span>${[3,5,10,20].map(n=>`<button data-span="${n}" aria-pressed="${n===10}" class="${n===10?'active':''}">${n} км</button>`).join('')}</div><div class="driverChart" id="driverChart" role="img" tabindex="0" aria-label="Обзор пути. Нажмите для подробностей, стрелки для перемещения."></div><div class="driverFoot"><span id="driverRange">—</span><span>По ходу движения →</span></div><p id="driverMessage" role="status">Загружаем профиль…</p><div class="driverDetail" id="driverDetail" hidden><header><b id="driverDetailTitle"></b><button id="driverCloseDetail" aria-label="Закрыть подробности">×</button></header><div class="driverChart" id="driverDetailChart"></div></div><div class="driverActions"><button id="driverBack">← Обзор</button><button id="driverHere">К позиции</button><button id="driverNext">Обзор →</button></div><p class="driverNote">Ограничения и уклоны — из режимки 2026. Нажмите на участок для подробностей. GPS-привязка приблизительная; текущие огни светофоров не поступают.</p>`;
   let span=10000,center=null,follow=true,selection=null,sequence=0,route=null,state=null,entries=[],destroyed=false;
-  const memo=new Map(),urls=new Set();let currentRoute=null;
+  const memo=new Map(),urls=new Set();let currentRoute=null;const tiles=createPageStore(source,()=>{if(!destroyed)render()});
   const fmt=m=>{const x=Math.round(m),km=Math.floor(x/1000),r=x%1000;return `${km} км · ПК ${Math.floor(r/100)+1}`};
   const number=m=>(m/1000).toLocaleString('ru-RU',{maximumFractionDigits:1,useGrouping:false});
   async function source(page){
@@ -75,14 +92,17 @@
   function range(c,s){let start=c-route.direction*s*.18;const maxStart=route.direction===1?route.end-s:route.start+s;
    start=route.direction===1?Math.max(route.start,Math.min(maxStart,start)):Math.min(route.end,Math.max(maxStart,start));return {start,end:start+route.direction*s,span:s};}
   function chart(el,r,detail=false){
-   el.replaceChildren();const width=el.clientWidth;if(!width)return;
+   const width=el.clientWidth;if(!width)return;
    const height=el.clientHeight,alignment=landmarkLayout(entries,route.direction);
+   const signature=[route.id,r.span,width,height,detail,...entries.map(e=>e.page.file)].join('|');
+   const reuse=el.dataset.profileSignature===signature;
+   if(!reuse){el.replaceChildren();el.dataset.profileSignature=signature;el.profileTiles=[]}
    const bands=[['speed','ОГРАНИЧЕНИЯ ПО РЕЖИМКЕ',40,90,.21],['landmarks','ОРИЕНТИРЫ ИЗ ДОКУМЕНТА',180,null,.33],['grade','СХЕМА УКЛОНОВ · ‰ / ДЛИНЫ · м',null,null,.30]];
-   for(const [kind,label,y0,h0,ratio] of bands){if(detail&&kind==='landmarks')continue;const band=document.createElement('div');band.className='driverBand '+kind;const title=document.createElement('span');title.className='driverBandLabel';title.textContent=label;band.append(title);el.append(band);
+   if(!reuse)for(const [kind,label,y0,h0,ratio] of bands){if(detail&&kind==='landmarks')continue;const band=document.createElement('div');band.className='driverBand '+kind;const title=document.createElement('span');title.className='driverBandLabel';title.textContent=label;band.append(title);el.append(band);
     for(const entry of entries){const p=entry.page,g=entry.geo,lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));if(hi<=lo)continue;
      const x0=(lo-r.start)/route.direction/r.span*width,x1=(hi-r.start)/route.direction/r.span*width;
      const left=Math.min(x0,x1),w=Math.abs(x1-x0),block=document.createElement('div');block.style.cssText=`position:absolute;left:${left}px;width:${w}px;top:0;bottom:0;overflow:hidden`;
-     const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?p.profileBox[1]:(y0||0),h=kind==='grade'?p.profileBox[3]:(h0||Math.max(100,p.profileBox[1]-180));
+     const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?p.profileBox[1]:kind==='speed'?g.speedTop:(y0||0),h=kind==='grade'?p.profileBox[3]:(h0||Math.max(100,p.profileBox[1]-180));
      const bh=height*(detail?(kind==='speed'?.40:.45):ratio),sy=bh/h/(kind==='landmarks'?alignment.scale:1);
      const image=document.createElement('img');image.alt='';image.src=entry.url;image.style.width=g.width*sx+'px';image.style.height=g.height*sy+'px';
      // kmOrder and direction determine whether the source needs mirroring.
@@ -90,25 +110,33 @@
      if(Math.sign(g.a)!==route.direction){block.textContent='Обратная сетка: откройте лист';band.append(block);continue}
      const sourceLeft=(g.a*(route.direction===1?lo:hi)+g.b)*sx;
      image.style.left=-sourceLeft+'px';image.style.top=-y*sy+'px';
-     if(kind==='landmarks'){const crop=document.createElement('div');crop.style.cssText=`position:absolute;left:0;right:0;top:${((alignment.shifts.get(p.file)||0)-alignment.min)*bh/alignment.scale}px;height:${bh/alignment.scale}px;overflow:hidden`;crop.append(image);block.append(crop)}else block.append(image);band.append(block);
+     if(kind==='landmarks'){const crop=document.createElement('div');crop.style.cssText=`position:absolute;left:0;right:0;top:${((alignment.shifts.get(p.file)||0)-alignment.min)*bh/alignment.scale}px;height:${bh/alignment.scale}px;overflow:hidden`;crop.append(image);block.append(crop)}else block.append(image);band.append(block);el.profileTiles.push({block,image,p,g,sx});
     }
    }
+   if(reuse)for(const {block,image,p,g,sx} of el.profileTiles){
+    const lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));block.hidden=hi<=lo;if(block.hidden)continue;
+    const x0=(lo-r.start)/route.direction/r.span*width,x1=(hi-r.start)/route.direction/r.span*width;
+    block.style.left=Math.min(x0,x1)+'px';block.style.width=Math.abs(x1-x0)+'px';image.style.left=-(g.a*(route.direction===1?lo:hi)+g.b)*sx+'px';
+   }
+   for(const overlay of el.querySelectorAll('.driverAxis,.driverMarker,.driverSelection'))overlay.remove();
    const axis=document.createElement('div');axis.className='driverAxis';const step=detail?200:r.span<=5000?1000:r.span<=10000?2000:5000;
    const lo=Math.min(r.start,r.end),hi=Math.max(r.start,r.end);
    for(let m=Math.ceil(lo/step)*step;m<=hi;m+=step){const x=(m-r.start)/route.direction/r.span*100;if(x<3||x>97)continue;const tick=document.createElement('div');tick.className='driverTick';tick.style.left=x+'%';const label=document.createElement('span');label.textContent=number(m);tick.append(label);axis.append(tick)}el.append(axis);
    if(state.valid){const x=(state.chain-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const marker=document.createElement('div');marker.className='driverMarker';marker.style.left=x+'%';el.append(marker)}}
    if(selection!==null&&!detail){const x=(selection-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const mark=document.createElement('div');mark.className='driverSelection';mark.style.left=x+'%';el.append(mark)}}
   }
-  async function render(){
-   if(destroyed||!route)return;const id=++sequence,r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';$('driverMessage').textContent='Загружаем листы обзора…';entries=[];chart($('driverChart'),r);
+  function render(){
+   if(destroyed||!route)return;const r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';
    const doc=viewer.catalog.documents.find(d=>d.id===route.document),lo=Math.min(r.start,r.end),hi=Math.max(r.start,r.end);
    const leaves=doc.leaves.filter(p=>p.route===route.id&&p.start<hi&&p.end>lo),groups=new Map();for(const p of leaves){const k=p.start+':'+p.end;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p)}
    const chosen=[],problems=[];for(const group of groups.values()){if(group.length===1)chosen.push(group[0]);else {const current=group.find(p=>p.number===state.page)||group.find(p=>group.every(l=>l.overviewPage===p.number));if(current)chosen.push(current);else problems.push('В исходнике несколько листов для '+number(group[0].start)+' км')}}
-   const results=await Promise.allSettled(chosen.map(source));if(id!==sequence||destroyed)return;
-   entries=results.filter(r=>r.status==='fulfilled').map(r=>r.value);results.filter(r=>r.status==='rejected').forEach(r=>problems.push(r.reason.message));
+   entries=chosen.map(p=>tiles.get(p)).filter(Boolean);
+   for(const p of chosen)tiles.request(p);
+   const pending=chosen.filter(p=>tiles.status(p)==='pending').length;
+   for(const p of chosen)if(tiles.status(p)==='failed')problems.push('Лист '+p.number+': '+tiles.error(p).message);
    // Explicit gaps remain blank; duplicate pages and route boundaries are never filled with guesses.
-   const intervals=entries.map(e=>[Math.max(lo,e.page.start),Math.min(hi,e.page.end)]).sort((a,b)=>a[0]-b[0]);let cursor=lo;for(const [a,b] of intervals){if(a>cursor+1)problems.push('Часть обзора без данных');cursor=Math.max(cursor,b)}if(cursor<hi-1)problems.push('Часть обзора без данных');
-   chart($('driverChart'),r);if(selection!==null)detail();$('driverMessage').textContent=problems.length?[...new Set(problems)].join('. '):'Нажмите на профиль — подробности участка. Сдвигайте по горизонтали для обзора.';
+   const intervals=entries.map(e=>[Math.max(lo,e.page.start),Math.min(hi,e.page.end)]).sort((a,b)=>a[0]-b[0]);let cursor=lo;for(const [a,b] of intervals){if(a>cursor+1&&!pending)problems.push('Часть обзора без данных');cursor=Math.max(cursor,b)}if(cursor<hi-1&&!pending)problems.push('Часть обзора без данных');
+   chart($('driverChart'),r);if(selection!==null)detail();$('driverMessage').textContent=pending?'Загружено '+entries.length+' из '+chosen.length+' листов. Ожидаем остальные…':problems.length?[...new Set(problems)].join('. '):'Нажмите на профиль — подробности участка. Сдвигайте по горизонтали для обзора.';
   }
   function detail(){if(selection===null)return;$('driverDetail').hidden=false;$('driverDetailTitle').textContent=fmt(selection)+' · участок 1 км';chart($('driverDetailChart'),range(selection,1000),true)}
   function update(){
@@ -139,5 +167,5 @@
   window.addEventListener('pagehide',()=>{destroyed=true;obs.disconnect();resize.disconnect();urls.forEach(url=>URL.revokeObjectURL(url))},{once:true});
   update();
  }
- root.DriverProfile={create,geometry,curveY,landmarkLayout};
+ root.DriverProfile={create,geometry,curveY,landmarkLayout,createPageStore};
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -8,14 +8,26 @@
   const cacheSupported=typeof caches!=='undefined';
   if(!globalThis.crypto?.subtle)throw Error('Для проверки файлов откройте приложение по HTTPS.');
   function message(text){$('regimeStatus').textContent=text;queueMicrotask(()=>document.dispatchEvent(new Event('regimechange')))}
+  const reads=new Map();
+  function sharedRead(page){
+   if(!reads.has(page.file))reads.set(page.file,verified(page).finally(()=>reads.delete(page.file)));
+   return reads.get(page.file);
+  }
+  async function downloadBytes(url,signal){
+   const controller=new AbortController();let timedOut=false;
+   const cancel=()=>controller.abort();if(signal?.aborted)cancel();signal?.addEventListener('abort',cancel,{once:true});
+   const timer=setTimeout(()=>{timedOut=true;controller.abort()},45000);
+   try{const response=await fetch(url,{cache:'no-store',signal:controller.signal});if(!response.ok)throw Error('Файл недоступен: '+response.status);return await response.arrayBuffer()}
+   catch(e){if(timedOut)throw Error('Лист не загрузился за 45 секунд. Проверьте связь или сохраните режимку офлайн.');throw e}
+   finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel)}
+  }
   async function verified(asset,signal){
    const url=absolute(asset);let cache=null,hit=null;
    try{if(cacheSupported){cache=await caches.open(CACHE);hit=await cache.match(url)}}catch(e){if(saveAbort)throw Error('Офлайн-хранилище недоступно в этом браузере.');cache=null;$('regimeOffline').textContent='Лист можно открыть с интернетом; офлайн-хранилище недоступно.';}
    if(saveAbort&&!cache)throw Error('Офлайн-хранилище недоступно в этом браузере.');
    for(let attempt=0;attempt<2;attempt++){
     if(signal?.aborted)throw new DOMException('Остановлено','AbortError');
-    const response=hit||await fetch(url,{cache:'no-store',signal});if(!response.ok)throw Error('Файл недоступен: '+response.status);
-    const bytes=await response.arrayBuffer();if(bytes.byteLength!==asset.bytes){if(hit){await cache.delete(url);hit=null;continue}throw Error('Неполный файл. Повторите загрузку.');}
+    const bytes=hit?await hit.arrayBuffer():await downloadBytes(url,signal);if(bytes.byteLength!==asset.bytes){if(hit){await cache.delete(url);hit=null;continue}throw Error('Неполный файл. Повторите загрузку.');}
     const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
     if(hash!==asset.sha256){if(hit){await cache.delete(url);hit=null;continue}throw Error('Файл не совпадает с каталогом. Показ отменён.');}
     if(!hit&&cache){try{await cache.put(url,new Response(bytes,{headers:{'Content-Type':asset.file.endsWith('.svg')?'image/svg+xml':'application/pdf','X-Regime-SHA256':hash}}))}catch(e){if(saveAbort)throw Error('Не удалось сохранить офлайн: недостаточно места или запрет хранилища.');$('regimeOffline').textContent='Лист открыт, но не сохранён офлайн.'}}
@@ -42,7 +54,7 @@
    $('regimeNote').textContent=page.note||'';$('regimeFocus').disabled=page.kind!=='profile';$('regimeFocus').textContent=focused?'Показать весь лист':'Профиль крупно';$('regimeFocus').setAttribute('aria-pressed',String(focused));
    $('regimeBack').disabled=page.number<=1;$('regimeNext').disabled=page.number>=localDoc.pages;message('Открываем лист '+page.number+'…');loadAbort=new AbortController();
    try{
-    const bytes=await verified(page,loadAbort.signal);if(id!==loadId)return;
+    const bytes=await sharedRead(page);if(id!==loadId)return;
     let svg=new TextDecoder().decode(bytes);
     if(focused&&page.profileBox){const box=page.profileBox.join(' ');svg=svg.replace(/(<svg\b[^>]*\bviewBox=")[^"]*(")/,(_,a,b)=>a+box+b).replace(/(<svg\b[^>]*\bheight=")[^"]*(")/,(_,a,b)=>a+page.profileBox[3]+b).replace(/(<svg\b[^>]*\bwidth=")[^"]*(")/,(_,a,b)=>a+page.profileBox[2]+b)}
     blobUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));const image=$('regimeImage');image.style.width=width+'px';image.style.height='auto';$('regimeViewport').scrollTop=0;image.onload=()=>{if(id!==loadId)return;image.hidden=false;message(page.route?(positionMode==='gps'?'Оценка по GPS: ≈ ':'Выбрано вручную: ')+(positionMode==='gps'?RailCore.formatPicket(chain):RailCore.format(chain))+'. '+(positionMode==='gps'?'Привязка к пикету и выбранному пути не проверена.':'Показан исходный профиль выбранного пути.'):'Справочный лист из исходного документа.');const fraction=page.route?(chain-page.start)/(page.end-page.start):0;const across=page.route?(activeRoute().direction===1?fraction:1-fraction):0;$('regimeViewport').scrollLeft=Math.max(0,across*width-$('regimeViewport').clientWidth/2);$('regimeViewport').scrollTop=0;offlineState().catch(()=>{})};image.onerror=()=>{if(id===loadId){image.hidden=true;leaf=null;message('Не удалось отрисовать лист. Откройте исходный PDF.')}};image.src=blobUrl;
@@ -85,7 +97,7 @@
   };
   $('regimeCancel').onclick=()=>saveAbort?.abort();window.addEventListener('pagehide',()=>{saveAbort?.abort();clearImage()});
   for(const id of ['regimeRoute','regimePages','regimeGo','regimePlus','regimeMinus','regimeFit'])$(id).disabled=false;$('regimeSave').disabled=!cacheSupported;
-  return {readPage:async page=>new TextDecoder().decode(await verified(page)),go,beginLive(){positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,valid:!!leaf}),catalog};
+  return {readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,valid:!!leaf}),catalog};
  }
  root.RegimeViewer={create};
 })(typeof globalThis!=='undefined'?globalThis:this);
