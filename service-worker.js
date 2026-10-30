@@ -1,7 +1,7 @@
-const CACHE = 'rabochee-vremya-v30-gps-20261029';
+const CACHE = 'rabochee-vremya-v31-driver-20261030';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
-const RAIL = ['./track-profile.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/regime-core.js', './rail/regime.js', './rail/regime-catalog.json'];
+const RAIL = ['./track-profile.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/regime-core.js', './rail/regime.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/driver-profile.css'];
 const INDEX = './index.html';
 
 async function fetchFresh(input, timeoutMs = 5000) {

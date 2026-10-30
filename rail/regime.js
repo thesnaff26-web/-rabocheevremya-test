@@ -7,7 +7,7 @@
   const absolute=a=>new URL('./'+a.file,document.baseURI).href;
   const cacheSupported=typeof caches!=='undefined';
   if(!globalThis.crypto?.subtle)throw Error('Для проверки файлов откройте приложение по HTTPS.');
-  function message(text){$('regimeStatus').textContent=text}
+  function message(text){$('regimeStatus').textContent=text;queueMicrotask(()=>document.dispatchEvent(new Event('regimechange')))}
   async function verified(asset,signal){
    const url=absolute(asset);let cache=null,hit=null;
    try{if(cacheSupported){cache=await caches.open(CACHE);hit=await cache.match(url)}}catch(e){if(saveAbort)throw Error('Офлайн-хранилище недоступно в этом браузере.');cache=null;$('regimeOffline').textContent='Лист можно открыть с интернетом; офлайн-хранилище недоступно.';}
@@ -44,8 +44,8 @@
    try{
     const bytes=await verified(page,loadAbort.signal);if(id!==loadId)return;
     let svg=new TextDecoder().decode(bytes);
-    if(focused&&page.profileBox){const box=page.profileBox.join(' ');svg=svg.replace(/(<svg\b[^>]*\bviewBox=")[^"]*(")/,(_,a,b)=>a+box+b).replace(/(<svg\b[^>]*\bheight=")[^"]*(")/,(_,a,b)=>a+page.profileBox[3]+b)}
-    blobUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));const image=$('regimeImage');image.style.width=width+'px';image.onload=()=>{if(id!==loadId)return;image.hidden=false;message(page.route?(positionMode==='gps'?'Оценка по GPS: ≈ ':'Выбрано вручную: ')+(positionMode==='gps'?RailCore.formatPicket(chain):RailCore.format(chain))+'. '+(positionMode==='gps'?'Привязка к пикету и выбранному пути не проверена.':'Показан исходный профиль выбранного пути.'):'Справочный лист из исходного документа.');const fraction=page.route?(chain-page.start)/(page.end-page.start):0;const across=page.route?(activeRoute().direction===1?fraction:1-fraction):0;$('regimeViewport').scrollLeft=Math.max(0,across*width-$('regimeViewport').clientWidth/2);$('regimeViewport').scrollTop=0;offlineState().catch(()=>{})};image.onerror=()=>{if(id===loadId){image.hidden=true;leaf=null;message('Не удалось отрисовать лист. Откройте исходный PDF.')}};image.src=blobUrl;
+    if(focused&&page.profileBox){const box=page.profileBox.join(' ');svg=svg.replace(/(<svg\b[^>]*\bviewBox=")[^"]*(")/,(_,a,b)=>a+box+b).replace(/(<svg\b[^>]*\bheight=")[^"]*(")/,(_,a,b)=>a+page.profileBox[3]+b).replace(/(<svg\b[^>]*\bwidth=")[^"]*(")/,(_,a,b)=>a+page.profileBox[2]+b)}
+    blobUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));const image=$('regimeImage');image.style.width=width+'px';image.style.height='auto';$('regimeViewport').scrollTop=0;image.onload=()=>{if(id!==loadId)return;image.hidden=false;message(page.route?(positionMode==='gps'?'Оценка по GPS: ≈ ':'Выбрано вручную: ')+(positionMode==='gps'?RailCore.formatPicket(chain):RailCore.format(chain))+'. '+(positionMode==='gps'?'Привязка к пикету и выбранному пути не проверена.':'Показан исходный профиль выбранного пути.'):'Справочный лист из исходного документа.');const fraction=page.route?(chain-page.start)/(page.end-page.start):0;const across=page.route?(activeRoute().direction===1?fraction:1-fraction):0;$('regimeViewport').scrollLeft=Math.max(0,across*width-$('regimeViewport').clientWidth/2);$('regimeViewport').scrollTop=0;offlineState().catch(()=>{})};image.onerror=()=>{if(id===loadId){image.hidden=true;leaf=null;message('Не удалось отрисовать лист. Откройте исходный PDF.')}};image.src=blobUrl;
    }catch(e){if(id!==loadId||e.name==='AbortError')return;message('Лист не открыт: '+e.message+' Если сети нет, заранее сохраните эту режимку офлайн.');$('regimeImage').hidden=true;leaf=null}
   }
   function scrollLive(){if(!leaf?.route)return;const fraction=(chain-leaf.start)/(leaf.end-leaf.start),across=activeRoute().direction===1?fraction:1-fraction;$('regimeViewport').scrollLeft=Math.max(0,(.06+.87*across)*width-$('regimeViewport').clientWidth/2)}
@@ -85,7 +85,7 @@
   };
   $('regimeCancel').onclick=()=>saveAbort?.abort();window.addEventListener('pagehide',()=>{saveAbort?.abort();clearImage()});
   for(const id of ['regimeRoute','regimePages','regimeGo','regimePlus','regimeMinus','regimeFit'])$(id).disabled=false;$('regimeSave').disabled=!cacheSupported;
-  return {go,beginLive(){positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode}),catalog};
+  return {readPage:async page=>new TextDecoder().decode(await verified(page)),go,beginLive(){positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,valid:!!leaf}),catalog};
  }
  root.RegimeViewer={create};
 })(typeof globalThis!=='undefined'?globalThis:this);

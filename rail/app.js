@@ -37,7 +37,7 @@
   map=RailMap.create($('routeMap'),data,move,message=>{$('mapMessage').textContent=message});
   map.select(center);$('mapPlus').disabled=false;$('mapMinus').disabled=false;$('mapAll').disabled=false;
   $('mapPlus').onclick=map.zoomIn;$('mapMinus').onclick=map.zoomOut;$('mapAll').onclick=map.overview;
-  try{regime=await RegimeViewer.create(m=>{if(gps?.isActive())gps.stop('Автоследование приостановлено для ручного просмотра.');if(m>=low&&m<=high){center=m;map?.select(center);render(false)}})}catch(e){$('regimeStatus').textContent='Не удалось открыть режимки: '+e.message}
+  try{regime=await RegimeViewer.create(m=>{if(gps?.isActive())gps.stop('Автоследование приостановлено для ручного просмотра.');if(m>=low&&m<=high){center=m;map?.select(center);render(false)}});if(regime&&window.DriverProfile)DriverProfile.create(regime)}catch(e){$('regimeStatus').textContent='Не удалось открыть режимки: '+e.message}
   gps=RailGPS.create(data,{
    fix(fix){liveFix=fix;$('position').textContent='≈ '+C.formatPicket(fix.chain);$('accuracy').textContent=Math.round(fix.accuracy)+' м';$('offset').textContent=Math.round(fix.distance)+' м';$('speed').textContent=fix.speed===null?'—':Math.round(fix.speed*3.6)+' км/ч';$('status').textContent='Автоследование · оценка по непроверенной координатной базе. Проверьте выбранное направление и путь.';center=fix.chain;map?.select(center);render(false);$('centerLabel').textContent='GPS ≈ '+C.formatPicket(center);regime?.goLive(center,fix.accuracy)},
    lost(reason){liveFix=null;$('position').textContent='Км/ПК не определён';$('offset').textContent='—';$('speed').textContent='—';$('accuracy').textContent='—';$('status').textContent=reason;regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
@@ -46,12 +46,12 @@
   $('start').disabled=!regime;$('start').onclick=()=>{regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
   window.addEventListener('pagehide',()=>gps.stop());document.addEventListener('visibilitychange',()=>{if(document.hidden)gps.stop('Экран скрыт: GPS приостановлен. Включите следование после возвращения.')});
   render();
-  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1034', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
+  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1035', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
   updateNetwork();
  }catch(e){['start','viewRange','stations','go','prev','next','mapPlus','mapMinus','mapAll'].forEach(id=>$(id).disabled=true);showError('Не удалось открыть карту. Подключитесь к сети и повторно откройте раздел. '+e.message);$('status').textContent='База не загружена.'}
  async function updateNetwork(){
   let ready=false;
-  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v30-gps-20261029');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
+  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v31-driver-20261030');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
   $('offline').textContent=(navigator.onLine?'Интернет доступен. ':'Нет сети. ')+(ready?'Файлы раздела сохранены для офлайн-работы.':'Офлайн-копия ещё не подтверждена. Откройте раздел с интернетом после обновления приложения.');
  }
  navigator.serviceWorker?.addEventListener('controllerchange',updateNetwork);

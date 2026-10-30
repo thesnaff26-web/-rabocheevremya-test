@@ -1,0 +1,103 @@
+(function(root){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ // Source bands are displayed without inventing or interpolating operational values.
+ // kmOrder calibrates the horizontal position against each document's own grid.
+ function geometry(text,page){
+  const xml=new DOMParser().parseFromString(text,'image/svg+xml');
+  if(xml.querySelector('parsererror'))throw Error('Ошибка схемы листа');
+  const groups=[];
+  for(const u of xml.querySelectorAll('use[x][y]')){
+   if(+u.getAttribute('y')>50)continue;
+   const x=+u.getAttribute('x'),y=+u.getAttribute('y');
+   let g=groups.find(g=>Math.abs(g.y-y)<1&&Math.abs(g.last-x)<13);
+   if(!g){g={y,x,last:x,n:0};groups.push(g)}g.last=x;g.n++;
+  }
+  const labels=groups.filter(g=>g.n===4).sort((a,b)=>a.x-b.x),order=page.kmOrder;
+  if(labels.length!==order?.length||order.length<2)throw Error('Не удалось точно сопоставить километровую сетку');
+  const points=labels.map((g,i)=>[order[i]*1000+500,(g.x+g.last+10)/2]);
+  const mean=points.reduce((a,p)=>a+p[0],0)/points.length,ym=points.reduce((a,p)=>a+p[1],0)/points.length;
+  const a=points.reduce((n,p)=>n+(p[0]-mean)*(p[1]-ym),0)/points.reduce((n,p)=>n+(p[0]-mean)**2,0),b=ym-a*mean;
+  // Reject irregular grids rather than silently stretching them to a wrong km.
+  if(points.some(p=>Math.abs(a*p[0]+b-p[1])>8))throw Error('Неравномерная сетка: откройте исходный лист');
+  return {a,b,width:page.width,height:page.height};
+ }
+ function create(viewer){
+  const host=$('driverPanel');if(!host)return;
+  host.innerHTML=`<div class="driverHead"><div><small>ЭЛЕКТРОННЫЙ ПРОФИЛЬ</small><strong id="driverPosition">—</strong><span id="driverMode" class="driverMode">Ручной просмотр</span></div><div class="driverSpeed"><b id="driverSpeed">—</b><span>км/ч · GPS</span></div></div><div class="driverRoute" id="driverRoute"></div><div class="driverActions"><button id="driverGPS">Включить GPS</button><button id="driverSetup">Участок / км</button></div><div class="driverScales" role="group" aria-label="Ширина обзора"><span>Обзор</span>${[3,5,10,20].map(n=>`<button data-span="${n}" aria-pressed="${n===10}" class="${n===10?'active':''}">${n} км</button>`).join('')}</div><div class="driverChart" id="driverChart" role="img" tabindex="0" aria-label="Обзор пути. Нажмите для подробностей, стрелки для перемещения."></div><div class="driverFoot"><span id="driverRange">—</span><span>По ходу движения →</span></div><p id="driverMessage" role="status">Загружаем профиль…</p><div class="driverDetail" id="driverDetail" hidden><header><b id="driverDetailTitle"></b><button id="driverCloseDetail" aria-label="Закрыть подробности">×</button></header><div class="driverChart" id="driverDetailChart"></div></div><div class="driverActions"><button id="driverBack">← Обзор</button><button id="driverHere">К позиции</button><button id="driverNext">Обзор →</button></div><p class="driverNote">Ограничения и уклоны — из режимки 2026. Нажмите на участок для подробностей. GPS-привязка приблизительная; текущие огни светофоров не поступают.</p>`;
+  let span=10000,center=null,follow=true,selection=null,sequence=0,route=null,state=null,entries=[],destroyed=false;
+  const memo=new Map(),urls=new Set();let currentRoute=null;
+  const fmt=m=>{const x=Math.round(m),km=Math.floor(x/1000),r=x%1000;return `${km} км · ПК ${Math.floor(r/100)+1}`};
+  const number=m=>(m/1000).toLocaleString('ru-RU',{maximumFractionDigits:1,useGrouping:false});
+  async function source(page){
+   if(!memo.has(page.file))memo.set(page.file,viewer.readPage(page).then(text=>{const geo=geometry(text,page);const url=URL.createObjectURL(new Blob([text],{type:'image/svg+xml'}));urls.add(url);return {page,geo,url}}).catch(e=>{memo.delete(page.file);throw e}));
+   return memo.get(page.file);
+  }
+  function range(c,s){let start=c-route.direction*s*.18;const maxStart=route.direction===1?route.end-s:route.start+s;
+   start=route.direction===1?Math.max(route.start,Math.min(maxStart,start)):Math.min(route.end,Math.max(maxStart,start));return {start,end:start+route.direction*s,span:s};}
+  function chart(el,r,detail=false){
+   el.replaceChildren();const width=el.clientWidth;if(!width)return;
+   const height=el.clientHeight;
+   const bands=[['speed','ОГРАНИЧЕНИЯ ПО РЕЖИМКЕ',40,90,.21],['landmarks','ОРИЕНТИРЫ ИЗ ДОКУМЕНТА',180,null,.33],['grade','УКЛОНЫ · ‰ / ДЛИНЫ · м',null,null,.30]];
+   for(const [kind,label,y0,h0,ratio] of bands){if(detail&&kind==='landmarks')continue;const band=document.createElement('div');band.className='driverBand '+kind;const title=document.createElement('span');title.className='driverBandLabel';title.textContent=label;band.append(title);el.append(band);
+    for(const entry of entries){const p=entry.page,g=entry.geo,lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));if(hi<=lo)continue;
+     const x0=(lo-r.start)/route.direction/r.span*width,x1=(hi-r.start)/route.direction/r.span*width;
+     const left=Math.min(x0,x1),w=Math.abs(x1-x0),block=document.createElement('div');block.style.cssText=`position:absolute;left:${left}px;width:${w}px;top:0;bottom:0;overflow:hidden`;
+     const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?p.profileBox[1]:(y0||0),h=kind==='grade'?p.profileBox[3]:(h0||Math.max(100,p.profileBox[1]-180));
+     const bh=height*(detail?(kind==='speed'?.40:.45):ratio),sy=bh/h;
+     const image=document.createElement('img');image.alt='';image.src=entry.url;image.style.width=g.width*sx+'px';image.style.height=g.height*sy+'px';
+     // kmOrder and direction determine whether the source needs mirroring.
+     // All supplied profiles run left-to-right in their selected direction.
+     if(Math.sign(g.a)!==route.direction){block.textContent='Обратная сетка: откройте лист';band.append(block);continue}
+     const sourceLeft=(g.a*(route.direction===1?lo:hi)+g.b)*sx;
+     image.style.left=-sourceLeft+'px';image.style.top=-y*sy+'px';block.append(image);band.append(block);
+    }
+   }
+   const axis=document.createElement('div');axis.className='driverAxis';const step=detail?200:r.span<=5000?1000:r.span<=10000?2000:5000;
+   const lo=Math.min(r.start,r.end),hi=Math.max(r.start,r.end);
+   for(let m=Math.ceil(lo/step)*step;m<=hi;m+=step){const x=(m-r.start)/route.direction/r.span*100;if(x<3||x>97)continue;const tick=document.createElement('div');tick.className='driverTick';tick.style.left=x+'%';const label=document.createElement('span');label.textContent=number(m);tick.append(label);axis.append(tick)}el.append(axis);
+   if(state.valid){const x=(state.chain-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const marker=document.createElement('div');marker.className='driverMarker';marker.style.left=x+'%';el.append(marker)}}
+   if(selection!==null&&!detail){const x=(selection-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const mark=document.createElement('div');mark.className='driverSelection';mark.style.left=x+'%';el.append(mark)}}
+  }
+  async function render(){
+   if(destroyed||!route)return;const id=++sequence,r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';$('driverMessage').textContent='Загружаем листы обзора…';entries=[];chart($('driverChart'),r);
+   const doc=viewer.catalog.documents.find(d=>d.id===route.document),lo=Math.min(r.start,r.end),hi=Math.max(r.start,r.end);
+   const leaves=doc.leaves.filter(p=>p.route===route.id&&p.start<hi&&p.end>lo),groups=new Map();for(const p of leaves){const k=p.start+':'+p.end;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p)}
+   const chosen=[],problems=[];for(const group of groups.values()){if(group.length===1)chosen.push(group[0]);else {const current=group.find(p=>p.number===state.page);if(current)chosen.push(current);else problems.push('В исходнике несколько листов для '+number(group[0].start)+' км')}}
+   const results=await Promise.allSettled(chosen.map(source));if(id!==sequence||destroyed)return;
+   entries=results.filter(r=>r.status==='fulfilled').map(r=>r.value);results.filter(r=>r.status==='rejected').forEach(r=>problems.push(r.reason.message));
+   // Explicit gaps remain blank; duplicate pages and route boundaries are never filled with guesses.
+   const intervals=entries.map(e=>[Math.max(lo,e.page.start),Math.min(hi,e.page.end)]).sort((a,b)=>a[0]-b[0]);let cursor=lo;for(const [a,b] of intervals){if(a>cursor+1)problems.push('Часть обзора без данных');cursor=Math.max(cursor,b)}if(cursor<hi-1)problems.push('Часть обзора без данных');
+   chart($('driverChart'),r);if(selection!==null)detail();$('driverMessage').textContent=problems.length?[...new Set(problems)].join('. '):'Нажмите на профиль — подробности участка. Сдвигайте по горизонтали для обзора.';
+  }
+  function detail(){if(selection===null)return;$('driverDetail').hidden=false;$('driverDetailTitle').textContent=fmt(selection)+' · участок 1 км';chart($('driverDetailChart'),range(selection,1000),true)}
+  function update(){
+   const next=viewer.state();state=next;route=viewer.catalog.routes.find(r=>r.id===next.routeId);if(!route)return;
+   if(currentRoute!==route.id){center=next.chain;selection=null;follow=true;$('driverDetail').hidden=true;currentRoute=route.id}
+   if(center===null||follow)center=next.chain;
+   $('driverPosition').textContent=next.mode==='gps'&&!next.valid?'Км/ПК не определён':(next.mode==='gps'?'≈ ':'')+fmt(next.chain);$('driverRoute').textContent=route.name;
+   $('driverMode').textContent=next.mode==='gps'?(next.valid?'GPS · приблизительная позиция':'GPS · позиция не подтверждена'):'Ручной просмотр';
+   $('driverHere').textContent=follow?'К позиции':'Вернуться';
+   render();
+  }
+  for(const b of host.querySelectorAll('[data-span]'))b.onclick=()=>{span=+b.dataset.span*1000;for(const v of host.querySelectorAll('[data-span]')){v.classList.toggle('active',v===b);v.setAttribute('aria-pressed',String(v===b))}render()};
+  function shift(d){follow=false;center=Math.max(route.start,Math.min(route.end-1,center+d*route.direction*span*.65));$('driverHere').textContent='Вернуться';render()}
+  $('driverBack').onclick=()=>shift(-1);$('driverNext').onclick=()=>shift(1);$('driverHere').onclick=()=>{follow=true;selection=null;$('driverDetail').hidden=true;update()};
+  $('driverSetup').onclick=()=>{$('regimePanel').open=true;$('regimePanel').scrollIntoView({behavior:'smooth',block:'start'})};
+  $('driverGPS').onclick=()=>{const active=!$('stop').disabled;if(active)$('stop').click();else if(!$('start').disabled)$('start').click();else {$('gpsSettings').open=true;$('gpsSettings').scrollIntoView({behavior:'smooth'})}};
+  const obs=new MutationObserver(()=>{$('driverSpeed').textContent=$('speed').textContent.replace(' км/ч','');$('driverGPS').textContent=$('stop').disabled?'Включить GPS':'Остановить GPS'});obs.observe($('speed'),{childList:true});obs.observe($('stop'),{attributes:true,attributeFilter:['disabled']});
+  const el=$('driverChart'),pointers=new Map();let down=null,pinch=null,moved=false;
+  el.addEventListener('pointerdown',e=>{pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});el.setPointerCapture(e.pointerId);if(pointers.size===1){down={x:e.clientX,y:e.clientY};moved=false}if(pointers.size===2){const a=[...pointers.values()];pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);moved=true}});
+  el.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(down&&Math.abs(e.clientX-down.x)>10)moved=true});
+  function release(e,cancel=false){if(!pointers.has(e.pointerId))return;
+   if(pointers.size===2&&pinch){const a=[...pointers.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(!cancel&&Math.abs(dist-pinch)>15){const scales=[3000,5000,10000,20000];let i=scales.indexOf(span);span=scales[Math.max(0,Math.min(3,i+(dist>pinch?-1:1)))];host.querySelector(`[data-span="${span/1000}"]`).click()}pinch=null;down=null}
+   else if(!cancel&&down){const dx=e.clientX-down.x,dy=e.clientY-down.y;if(moved&&Math.abs(dx)>25&&Math.abs(dx)>Math.abs(dy)){follow=false;center=Math.max(route.start,Math.min(route.end-1,center-dx/el.clientWidth*span*route.direction));render()}else if(!moved&&Math.abs(dy)<10){const r=range(center,span),x=Math.max(0,Math.min(1,(e.clientX-el.getBoundingClientRect().left)/el.clientWidth));selection=r.start+x*route.direction*r.span;detail();chart(el,r)}}pointers.delete(e.pointerId);if(!pointers.size)down=null;
+  }
+  el.addEventListener('pointerup',e=>release(e));el.addEventListener('pointercancel',e=>release(e,true));el.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();shift(e.key==='ArrowRight'?1:-1)}};
+  $('driverCloseDetail').onclick=()=>{selection=null;$('driverDetail').hidden=true;chart(el,range(center,span))};
+  let frame=0;document.addEventListener('regimechange',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(update)});const resize=new ResizeObserver(()=>{if(route){chart(el,range(center,span));if(selection!==null)detail()}});resize.observe(el);
+  window.addEventListener('pagehide',()=>{destroyed=true;obs.disconnect();resize.disconnect();urls.forEach(url=>URL.revokeObjectURL(url))},{once:true});
+  update();
+ }
+ root.DriverProfile={create,geometry};
+})(typeof globalThis!=='undefined'?globalThis:this);
