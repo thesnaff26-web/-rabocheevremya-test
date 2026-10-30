@@ -89,7 +89,8 @@
      // All supplied profiles run left-to-right in their selected direction.
      if(Math.sign(g.a)!==route.direction){block.textContent='Обратная сетка: откройте лист';band.append(block);continue}
      const sourceLeft=(g.a*(route.direction===1?lo:hi)+g.b)*sx;
-     image.style.left=-sourceLeft+'px';image.style.top=(-y*sy+(kind==='landmarks'?((alignment.shifts.get(p.file)||0)-alignment.min)*bh/alignment.scale:0))+'px';block.append(image);band.append(block);
+     image.style.left=-sourceLeft+'px';image.style.top=-y*sy+'px';
+     if(kind==='landmarks'){const crop=document.createElement('div');crop.style.cssText=`position:absolute;left:0;right:0;top:${((alignment.shifts.get(p.file)||0)-alignment.min)*bh/alignment.scale}px;height:${bh/alignment.scale}px;overflow:hidden`;crop.append(image);block.append(crop)}else block.append(image);band.append(block);
     }
    }
    const axis=document.createElement('div');axis.className='driverAxis';const step=detail?200:r.span<=5000?1000:r.span<=10000?2000:5000;
