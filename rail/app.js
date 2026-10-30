@@ -1,5 +1,5 @@
 (async function(){
- 'use strict';const $=id=>document.getElementById(id),C=RailCore;let data,map,regime,gps,liveFix=null,center=6906000;
+ 'use strict';const $=id=>document.getElementById(id),C=RailCore;let data,map,regime,gps,rawFix=null,liveFix=null,center=6906000;
  const low=5639000,high=8537600;
  function node(tag,attrs,text){const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n}
  function showError(message){$('error').textContent=message}
@@ -28,7 +28,7 @@
  $('viewRange').oninput=e=>move(+e.target.value);$('prev').onclick=()=>move(Math.max(low,center-5000));$('next').onclick=()=>move(Math.min(high,center+5000));$('go').onclick=()=>move(parseFloat($('manualKm').value.replace(',','.'))*1000);$('manualKm').onkeydown=e=>{if(e.key==='Enter')$('go').click()};$('stations').onchange=e=>{if(e.target.value)move(+e.target.value)};
  try{
   const response=await fetch('./rail/corridor.json');if(!response.ok)throw Error('База недоступна: '+response.status);data=C.validate(await response.json());
-  $('status').textContent='Выберите направление и путь ниже, затем включите GPS-следование. Км/ПК будет приблизительным.';
+  $('status').textContent='Выберите чётный или нечётный путь. Участок определяется по GPS. Км/ПК будет приблизительным.';
   ['viewRange','stations','go','prev','next'].forEach(id=>$(id).disabled=false);
   const list=data.sections.flatMap(s=>s.stations).sort((a,b)=>a[0]-b[0]),names=new Set();
   for(const [m,name] of list){if(names.has(name))continue;names.add(name);const o=document.createElement('option');o.value=m;o.textContent=name+' · '+Math.floor(m/1000)+' км';$('stations').append(o)}
@@ -39,19 +39,20 @@
   $('mapPlus').onclick=map.zoomIn;$('mapMinus').onclick=map.zoomOut;$('mapAll').onclick=map.overview;
   try{regime=await RegimeViewer.create(m=>{if(gps?.isActive())gps.stop('Автоследование приостановлено для ручного просмотра.');if(m>=low&&m<=high){center=m;map?.select(center);render(false)}});if(regime&&window.DriverProfile)DriverProfile.create(regime)}catch(e){$('regimeStatus').textContent='Не удалось открыть режимки: '+e.message}
   gps=RailGPS.create(data,{
+   measure(position){rawFix=position;const c=position.coords;$('gpsDiagnostic').textContent='Координаты телефона: '+c.latitude.toFixed(6)+', '+c.longitude.toFixed(6)+'. Измерение: '+new Date(position.timestamp).toLocaleTimeString();},
    fix(fix){liveFix=fix;$('position').textContent='≈ '+C.formatPicket(fix.chain);$('accuracy').textContent=Math.round(fix.accuracy)+' м';$('offset').textContent=Math.round(fix.distance)+' м';$('speed').textContent=fix.speed===null?'—':Math.round(fix.speed*3.6)+' км/ч';$('status').textContent='Автоследование · оценка по непроверенной координатной базе. Проверьте выбранное направление и путь.';center=fix.chain;map?.select(center);render(false);$('centerLabel').textContent='GPS ≈ '+C.formatPicket(center);regime?.goLive(center,fix.accuracy)},
-   lost(reason){liveFix=null;$('position').textContent='Км/ПК не определён';$('offset').textContent='—';$('speed').textContent='—';$('accuracy').textContent='—';$('status').textContent=reason;regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
+   lost(reason,details={}){liveFix=null;$('position').textContent='Км/ПК не определён';const c=rawFix?.coords,fresh=rawFix&&Date.now()-rawFix.timestamp<=10000;$('offset').textContent=Number.isFinite(details.distance)?Math.round(details.distance)+' м':'—';$('speed').textContent=fresh&&Number.isFinite(c.speed)&&c.speed>=0?Math.round(c.speed*3.6)+' км/ч':'—';$('accuracy').textContent=fresh&&Number.isFinite(c.accuracy)?Math.round(c.accuracy)+' м':'—';$('status').textContent=reason;regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
    state(active){$('start').disabled=active||!regime;$('stop').disabled=!active}
   });
-  $('start').disabled=!regime;$('start').onclick=()=>{regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
+  $('start').disabled=!regime;$('start').onclick=()=>{rawFix=null;$('gpsDiagnostic').textContent='Ожидаем координаты телефона…';regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
   window.addEventListener('pagehide',()=>gps.stop());document.addEventListener('visibilitychange',()=>{if(document.hidden)gps.stop('Экран скрыт: GPS приостановлен. Включите следование после возвращения.')});
   render();
-  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1041', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
+  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1042', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
   updateNetwork();
  }catch(e){['start','viewRange','stations','go','prev','next','mapPlus','mapMinus','mapAll'].forEach(id=>$(id).disabled=true);showError('Не удалось открыть карту. Подключитесь к сети и повторно откройте раздел. '+e.message);$('status').textContent='База не загружена.'}
  async function updateNetwork(){
   let ready=false;
-  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v37-driver-20261030');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
+  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v38-driver-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
   $('offline').textContent=(navigator.onLine?'Интернет доступен. ':'Нет сети. ')+(ready?'Файлы раздела сохранены для офлайн-работы.':'Офлайн-копия ещё не подтверждена. Откройте раздел с интернетом после обновления приложения.');
  }
  navigator.serviceWorker?.addEventListener('controllerchange',updateNetwork);

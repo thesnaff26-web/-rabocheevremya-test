@@ -25,6 +25,10 @@
   const preferred=leaves.length>1&&leaves.every(l=>l.overviewPage===leaves[0].overviewPage)?leaves.find(l=>l.number===leaves[0].overviewPage):null;
   return {status:preferred||leaves.length===1?'found':leaves.length>1?'ambiguous':'missing',route,document,leaves:preferred?[preferred]:leaves};
  }
+ function autoRoute(c,currentId,m){
+  const current=c.routes.find(r=>r.id===currentId),direction=current?.direction||1;
+  return c.routes.find(r=>r.direction===direction&&r.start<=m&&m<r.end&&r.document===current?.document)||c.routes.find(r=>r.direction===direction&&r.start<=m&&m<r.end)||null;
+ }
  function assets(document){return [document,...document.leaves]}
- const api={validate,parsePosition,find,assets};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RegimeCore=api;
+ const api={validate,parsePosition,find,assets,autoRoute};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RegimeCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

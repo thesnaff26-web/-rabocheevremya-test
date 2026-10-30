@@ -33,7 +33,7 @@
    candidates.push({...p,section:s.id});
   }
   candidates.sort((a,b)=>a.distance-b.distance);const best=candidates[0];
-  if(!best||best.distance>Math.min(100,accuracy+50))return {ok:false,reason:'GPS вне координатной линии загруженного участка.'};
+  if(!best||best.distance>Math.min(100,accuracy+50))return {ok:false,distance:best?.distance??null,nearestChain:best?.chain??null,reason:best?'GPS в '+Math.round(best.distance)+' м от линии координатной базы. Привязка км/ПК не подтверждена.':'Рядом нет пригодных координатных отрезков базы.'};
   if(candidates.some(c=>Math.abs(c.chain-best.chain)>300&&c.distance<=best.distance+Math.max(15,accuracy)))return {ok:false,reason:'Неоднозначная привязка к пути. Показание скрыто.'};
   if(previous&&previous.time&&previous.chain&&Date.now()-previous.time<20000&&Math.abs(previous.chain-best.chain)>2500)return {ok:false,reason:'Резкий скачок GPS. Ожидаем устойчивую позицию.'};
   return {ok:true,...best,accuracy,time:Date.now()};

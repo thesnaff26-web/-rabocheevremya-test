@@ -63,8 +63,8 @@
   function scrollLive(){if(!leaf?.route)return;const fraction=(chain-leaf.start)/(leaf.end-leaf.start),across=activeRoute().direction===1?fraction:1-fraction;$('regimeViewport').scrollLeft=Math.max(0,(.06+.87*across)*width-$('regimeViewport').clientWidth/2)}
   function go(m,options={}){
    positionMode=options.live?'gps':'manual';chain=m;inputPosition(m);let result=RC.find(catalog,routeId,m);
-   if(result.status==='missing'&&!options.live){
-    const alternate=catalog.routes.find(r=>r.direction===activeRoute().direction&&r.start<=m&&m<r.end)||catalog.routes.find(r=>r.start<=m&&m<r.end);
+   if(result.status==='missing'){
+    const alternate=RC.autoRoute(catalog,routeId,m);
     if(alternate){const old=activeRoute().document;routeId=alternate.id;$('regimeRoute').value=routeId;if(old!==alternate.document)fillPages();result=RC.find(catalog,routeId,m)}
    }
    if(result.status==='ambiguous'){const chosen=overrides.get(routeId+':'+result.leaves[0].start),target=result.leaves.find(l=>l.number===chosen);if(target)result={...result,status:'found',leaves:[target]}}
@@ -97,7 +97,13 @@
   };
   $('regimeCancel').onclick=()=>saveAbort?.abort();window.addEventListener('pagehide',()=>{saveAbort?.abort();clearImage()});
   for(const id of ['regimeRoute','regimePages','regimeGo','regimePlus','regimeMinus','regimeFit'])$(id).disabled=false;$('regimeSave').disabled=!cacheSupported;
-  return {readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,valid:!!leaf}),catalog};
+  function setParity(direction){
+   const target=catalog.routes.find(r=>r.document===activeRoute().document&&r.direction===direction);if(!target)return;
+   routeId=target.id;$('regimeRoute').value=routeId;fillPages();
+   if(positionMode==='gps'&&!leaf){clearImage();message('Путь выбран. Ожидаем GPS-привязку.');return}
+   go(chain,{live:positionMode==='gps'});
+  }
+  return {setParity,readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,valid:!!leaf}),catalog};
  }
  root.RegimeViewer={create};
 })(typeof globalThis!=='undefined'?globalThis:this);
