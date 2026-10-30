@@ -1,6 +1,7 @@
-const CACHE = 'rabochee-vremya-v23';
+const CACHE = 'rabochee-vremya-v30-gps-20261029';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
+const RAIL = ['./track-profile.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/regime-core.js', './rail/regime.js', './rail/regime-catalog.json'];
 const INDEX = './index.html';
 
 async function fetchFresh(input, timeoutMs = 5000) {
@@ -40,6 +41,12 @@ self.addEventListener('install', event => {
         if (response.ok && response.type === 'basic') await cache.put(path, response);
       } catch (_) {}
     }));
+    // Require a complete module cache before activating; leave the old worker on failure.
+    await Promise.all(RAIL.map(async path => {
+      const response = await fetchFresh(path);
+      if (!response.ok || response.type !== 'basic') throw new Error('Rail asset unavailable');
+      await cache.put(path, response);
+    }));
     await self.skipWaiting();
   })());
 });
@@ -58,6 +65,24 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin && url.pathname.startsWith(new URL('./rail/regimes/', self.registration.scope).pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open('rabochee-regime-documents-v1');
+      const hit = await cache.match(request);
+      return hit || fetch(request);
+    })());
+    return;
+  }
+  if (url.origin === self.location.origin && RAIL.some(p => new URL(p, self.registration.scope).pathname === url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const hit = await cache.match(url.pathname);
+      if (hit) return hit;
+      return fetch(request);
+    })());
+    return;
+  }
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       const cached = await cachedIndex();
