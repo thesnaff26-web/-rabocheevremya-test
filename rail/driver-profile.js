@@ -20,7 +20,46 @@
   const a=points.reduce((n,p)=>n+(p[0]-mean)*(p[1]-ym),0)/points.reduce((n,p)=>n+(p[0]-mean)**2,0),b=ym-a*mean;
   // Reject irregular grids rather than silently stretching them to a wrong km.
   if(points.some(p=>Math.abs(a*p[0]+b-p[1])>8))throw Error('Неравномерная сетка: откройте исходный лист');
-  return {a,b,width:page.width,height:page.height};
+  return {a,b,width:page.width,height:page.height,trace:trackTrace(xml,page)};
+ }
+ // Sample only the document's long black route curve, outside the glyph definitions.
+ function trackTrace(xml,page){
+  let best=[];
+  for(const path of xml.querySelectorAll('path[stroke]')){
+   if(path.closest('defs')||!/^rgb\(0%, 0%, 0%\)$/.test(path.getAttribute('stroke')||'')||+(path.getAttribute('stroke-width')||0)<1.5)continue;
+   const matrix=(path.getAttribute('transform')||'').match(/matrix\(([^)]+)\)/);
+   const t=matrix?matrix[1].split(/[ ,]+/).map(Number):[1,0,0,1,0,0];if(t.length!==6||!t.every(Number.isFinite))continue;
+   const tokens=(path.getAttribute('d')||'').match(/[MLCZmlcz]|[-+]?(?:\d*\.)?\d+(?:[eE][-+]?\d+)?/g)||[];
+   let i=0,cmd='',x=0,y=0,points=[],ok=true;
+   const add=(x,y)=>points.push([t[0]*x+t[2]*y+t[4],t[1]*x+t[3]*y+t[5]]);
+   while(i<tokens.length){
+    if(/^[A-Za-z]$/.test(tokens[i]))cmd=tokens[i++];
+    if(cmd==='M'||cmd==='L'){x=+tokens[i++];y=+tokens[i++];add(x,y);if(cmd==='M')cmd='L'}
+    else if(cmd==='C'){const x0=x,y0=y,c1x=+tokens[i++],c1y=+tokens[i++],c2x=+tokens[i++],c2y=+tokens[i++],ex=+tokens[i++],ey=+tokens[i++];for(let j=1;j<=12;j++){const q=j/12,u=1-q;add(u*u*u*x0+3*u*u*q*c1x+3*u*q*q*c2x+q*q*q*ex,u*u*u*y0+3*u*u*q*c1y+3*u*q*q*c2y+q*q*q*ey)}x=ex;y=ey}
+    else {ok=false;break}
+   }
+   if(!ok||points.length<2||points.some(p=>!p.every(Number.isFinite)||p[1]<170||p[1]>page.profileBox[1]-8))continue;
+   points.sort((a,b)=>a[0]-b[0]);if(points.at(-1)[0]-points[0][0]<page.width*.75)continue;
+   if(points.length>best.length)best=points;
+  }
+  return best;
+ }
+ function curveY(entry,m){
+  const ps=entry.geo.trace,x=entry.geo.a*m+entry.geo.b;if(!ps?.length)return null;
+  if(x<=ps[0][0])return ps[0][1];if(x>=ps.at(-1)[0])return ps.at(-1)[1];
+  const j=ps.findIndex(p=>p[0]>=x),a=ps[j-1],b=ps[j];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]||1);
+ }
+ function landmarkLayout(entries,direction){
+  const ordered=[...entries].sort((a,b)=>direction*(a.page.start-b.page.start)),shifts=new Map();let previous=null,shift=0;
+  for(const e of ordered){
+   if(previous){const boundary=direction===1?e.page.start:e.page.end,prevEdge=direction===1?previous.page.end:previous.page.start;
+    const py=curveY(previous,boundary),ey=curveY(e,boundary);
+    if(Math.abs(boundary-prevEdge)<1&&py!==null&&ey!==null)shift+=(py-180)/Math.max(100,previous.page.profileBox[1]-180)-(ey-180)/Math.max(100,e.page.profileBox[1]-180);
+    else shift=0;
+   }
+   shifts.set(e.page.file,shift);previous=e;
+  }
+  const values=[0,...shifts.values()],min=Math.min(...values),max=Math.max(...values);return {shifts,min,scale:1+max-min};
  }
  function create(viewer){
   const host=$('driverPanel');if(!host)return;
@@ -37,20 +76,20 @@
    start=route.direction===1?Math.max(route.start,Math.min(maxStart,start)):Math.min(route.end,Math.max(maxStart,start));return {start,end:start+route.direction*s,span:s};}
   function chart(el,r,detail=false){
    el.replaceChildren();const width=el.clientWidth;if(!width)return;
-   const height=el.clientHeight;
-   const bands=[['speed','ОГРАНИЧЕНИЯ ПО РЕЖИМКЕ',40,90,.21],['landmarks','ОРИЕНТИРЫ ИЗ ДОКУМЕНТА',180,null,.33],['grade','УКЛОНЫ · ‰ / ДЛИНЫ · м',null,null,.30]];
+   const height=el.clientHeight,alignment=landmarkLayout(entries,route.direction);
+   const bands=[['speed','ОГРАНИЧЕНИЯ ПО РЕЖИМКЕ',40,90,.21],['landmarks','ОРИЕНТИРЫ ИЗ ДОКУМЕНТА',180,null,.33],['grade','СХЕМА УКЛОНОВ · ‰ / ДЛИНЫ · м',null,null,.30]];
    for(const [kind,label,y0,h0,ratio] of bands){if(detail&&kind==='landmarks')continue;const band=document.createElement('div');band.className='driverBand '+kind;const title=document.createElement('span');title.className='driverBandLabel';title.textContent=label;band.append(title);el.append(band);
     for(const entry of entries){const p=entry.page,g=entry.geo,lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));if(hi<=lo)continue;
      const x0=(lo-r.start)/route.direction/r.span*width,x1=(hi-r.start)/route.direction/r.span*width;
      const left=Math.min(x0,x1),w=Math.abs(x1-x0),block=document.createElement('div');block.style.cssText=`position:absolute;left:${left}px;width:${w}px;top:0;bottom:0;overflow:hidden`;
      const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?p.profileBox[1]:(y0||0),h=kind==='grade'?p.profileBox[3]:(h0||Math.max(100,p.profileBox[1]-180));
-     const bh=height*(detail?(kind==='speed'?.40:.45):ratio),sy=bh/h;
+     const bh=height*(detail?(kind==='speed'?.40:.45):ratio),sy=bh/h/(kind==='landmarks'?alignment.scale:1);
      const image=document.createElement('img');image.alt='';image.src=entry.url;image.style.width=g.width*sx+'px';image.style.height=g.height*sy+'px';
      // kmOrder and direction determine whether the source needs mirroring.
      // All supplied profiles run left-to-right in their selected direction.
      if(Math.sign(g.a)!==route.direction){block.textContent='Обратная сетка: откройте лист';band.append(block);continue}
      const sourceLeft=(g.a*(route.direction===1?lo:hi)+g.b)*sx;
-     image.style.left=-sourceLeft+'px';image.style.top=-y*sy+'px';block.append(image);band.append(block);
+     image.style.left=-sourceLeft+'px';image.style.top=(-y*sy+(kind==='landmarks'?((alignment.shifts.get(p.file)||0)-alignment.min)*bh/alignment.scale:0))+'px';block.append(image);band.append(block);
     }
    }
    const axis=document.createElement('div');axis.className='driverAxis';const step=detail?200:r.span<=5000?1000:r.span<=10000?2000:5000;
@@ -63,7 +102,7 @@
    if(destroyed||!route)return;const id=++sequence,r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';$('driverMessage').textContent='Загружаем листы обзора…';entries=[];chart($('driverChart'),r);
    const doc=viewer.catalog.documents.find(d=>d.id===route.document),lo=Math.min(r.start,r.end),hi=Math.max(r.start,r.end);
    const leaves=doc.leaves.filter(p=>p.route===route.id&&p.start<hi&&p.end>lo),groups=new Map();for(const p of leaves){const k=p.start+':'+p.end;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p)}
-   const chosen=[],problems=[];for(const group of groups.values()){if(group.length===1)chosen.push(group[0]);else {const current=group.find(p=>p.number===state.page);if(current)chosen.push(current);else problems.push('В исходнике несколько листов для '+number(group[0].start)+' км')}}
+   const chosen=[],problems=[];for(const group of groups.values()){if(group.length===1)chosen.push(group[0]);else {const current=group.find(p=>p.number===state.page)||group.find(p=>group.every(l=>l.overviewPage===p.number));if(current)chosen.push(current);else problems.push('В исходнике несколько листов для '+number(group[0].start)+' км')}}
    const results=await Promise.allSettled(chosen.map(source));if(id!==sequence||destroyed)return;
    entries=results.filter(r=>r.status==='fulfilled').map(r=>r.value);results.filter(r=>r.status==='rejected').forEach(r=>problems.push(r.reason.message));
    // Explicit gaps remain blank; duplicate pages and route boundaries are never filled with guesses.
@@ -99,5 +138,5 @@
   window.addEventListener('pagehide',()=>{destroyed=true;obs.disconnect();resize.disconnect();urls.forEach(url=>URL.revokeObjectURL(url))},{once:true});
   update();
  }
- root.DriverProfile={create,geometry};
+ root.DriverProfile={create,geometry,curveY,landmarkLayout};
 })(typeof globalThis!=='undefined'?globalThis:this);

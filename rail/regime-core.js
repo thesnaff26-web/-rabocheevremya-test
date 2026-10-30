@@ -22,7 +22,8 @@
  function find(c,routeId,m){
   const route=c.routes.find(r=>r.id===routeId);if(!route||!Number.isFinite(m))return {status:'missing',leaves:[]};
   const document=c.documents.find(d=>d.id===route.document),leaves=document.leaves.filter(l=>l.route===routeId&&l.start<=m&&m<l.end);
-  return {status:leaves.length===1?'found':leaves.length>1?'ambiguous':'missing',route,document,leaves};
+  const preferred=leaves.length>1&&leaves.every(l=>l.overviewPage===leaves[0].overviewPage)?leaves.find(l=>l.number===leaves[0].overviewPage):null;
+  return {status:preferred||leaves.length===1?'found':leaves.length>1?'ambiguous':'missing',route,document,leaves:preferred?[preferred]:leaves};
  }
  function assets(document){return [document,...document.leaves]}
  const api={validate,parsePosition,find,assets};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RegimeCore=api;
