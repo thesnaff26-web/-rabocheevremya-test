@@ -1,0 +1,14 @@
+{
+  "name": "Рабочее время",
+  "short_name": "Рабочее время",
+  "description": "Учёт рабочего времени локомотивной бригады",
+  "start_url": "./index.html?v=353&pwa=1",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06111b",
+  "theme_color": "#06111b",
+  "orientation": "portrait",
+  "icons": [
+    {"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+  ]
+}
