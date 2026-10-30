@@ -1,5 +1,5 @@
 (async function(){
- 'use strict';const $=id=>document.getElementById(id),C=RailCore;let data,map,regime,gps,rawHint=null,rawFix=null,liveFix=null,center=6906000;
+ 'use strict';const $=id=>document.getElementById(id),C=RailCore;let data,baseData,anchors=[],map,regime,gps,rawHint=null,rawFix=null,liveFix=null,center=6906000;
  const low=5639000,high=8537600;
  function node(tag,attrs,text){const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n}
  function showError(message){$('error').textContent=message}
@@ -27,7 +27,10 @@
  // Manual navigation pauses the optional GPS following session.
  $('viewRange').oninput=e=>move(+e.target.value);$('prev').onclick=()=>move(Math.max(low,center-5000));$('next').onclick=()=>move(Math.min(high,center+5000));$('go').onclick=()=>move(parseFloat($('manualKm').value.replace(',','.'))*1000);$('manualKm').onkeydown=e=>{if(e.key==='Enter')$('go').click()};$('stations').onchange=e=>{if(e.target.value)move(+e.target.value)};
  try{
-  const response=await fetch('./rail/corridor.json');if(!response.ok)throw Error('База недоступна: '+response.status);data=C.validate(await response.json());
+  const response=await fetch('./rail/corridor.json');if(!response.ok)throw Error('База недоступна: '+response.status);baseData=C.validate(await response.json());
+  try{const saved=JSON.parse(localStorage.getItem(RailCalibration.KEY)||'[]');if(Array.isArray(saved))anchors=saved.slice(-50)}catch(_){}
+  data=RailCalibration.apply(baseData,anchors,C);
+  $('anchorStatus').textContent='На этом телефоне сохранено привязок: '+anchors.length+'.';
   $('status').textContent='Выберите чётный или нечётный путь. Участок определяется по GPS. Км/ПК будет приблизительным.';
   ['viewRange','stations','go','prev','next'].forEach(id=>$(id).disabled=false);
   const list=data.sections.flatMap(s=>s.stations).sort((a,b)=>a[0]-b[0]),names=new Set();
@@ -44,15 +47,25 @@
    lost(reason,details={}){liveFix=null;$('position').textContent='Км/ПК не определён';const c=rawFix?.coords,fresh=rawFix&&Date.now()-rawFix.timestamp<=10000;$('offset').textContent=Number.isFinite(details.distance)?Math.round(details.distance)+' м':'—';$('speed').textContent=fresh&&Number.isFinite(c.speed)&&c.speed>=0?Math.round(c.speed*3.6)+' км/ч':'—';$('accuracy').textContent=fresh&&Number.isFinite(c.accuracy)?Math.round(c.accuracy)+' м':'—';$('status').textContent=reason;if(fresh&&rawHint&&gps?.isActive()){regime?.previewLive(rawHint.chain);$('gpsPath').textContent='Участок по GPS: '+regime.catalog.routes.find(r=>r.id===regime.state().routeId).name;$('status').textContent=reason+' Участок выбран по GPS; обзор приблизительный.';}else regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
    state(active){$('start').disabled=active||!regime;$('stop').disabled=!active}
   });
+  function restartGPS(){if(gps.isActive()){$('start').onclick()}}
+  $('anchorSave').onclick=()=>{try{
+   const m=RegimeCore.parsePosition($('anchorKm').value,$('anchorPk').value,$('anchorMetres').value);
+   if(!regime.catalog.routes.some(r=>r.start<=m&&m<r.end))throw Error('В режимках нет этого километра.');
+   if(!gps.isActive())throw Error('Включите GPS перед сохранением привязки.');
+   const anchor=RailCalibration.makeAnchor(baseData,m,rawFix,C),next=anchors.filter(a=>a.section!==anchor.section||Math.abs(a.chain-anchor.chain)>=5).concat(anchor).slice(-50),updated=RailCalibration.apply(baseData,next,C);
+   localStorage.setItem(RailCalibration.KEY,JSON.stringify(next));anchors=next;data.sections=updated.sections;
+   $('anchorStatus').textContent='Сохранена локальная привязка: '+C.format(m)+'. Ожидаем устойчивую GPS-привязку.';restartGPS();
+  }catch(e){$('anchorStatus').textContent='Привязка не сохранена: '+e.message}};
+  $('anchorRemove').onclick=()=>{try{localStorage.removeItem(RailCalibration.KEY);anchors=[];data.sections=RailCalibration.apply(baseData,[],C).sections;$('anchorStatus').textContent='Локальные GPS-привязки сброшены.';restartGPS()}catch(e){$('anchorStatus').textContent='Не удалось сбросить: '+e.message}};
   $('start').disabled=!regime;$('start').onclick=()=>{rawHint=null;rawFix=null;$('gpsDiagnostic').textContent='Ожидаем координаты телефона…';regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
   window.addEventListener('pagehide',()=>gps.stop());document.addEventListener('visibilitychange',()=>{if(document.hidden)gps.stop('Экран скрыт: GPS приостановлен. Включите следование после возвращения.')});
   render();
-  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1045', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
+  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1046', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
   updateNetwork();
  }catch(e){['start','viewRange','stations','go','prev','next','mapPlus','mapMinus','mapAll'].forEach(id=>$(id).disabled=true);showError('Не удалось открыть карту. Подключитесь к сети и повторно откройте раздел. '+e.message);$('status').textContent='База не загружена.'}
  async function updateNetwork(){
   let ready=false;
-  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v41-driver-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
+  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v42-driver-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/calibration.js','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
   $('offline').textContent=(navigator.onLine?'Интернет доступен. ':'Нет сети. ')+(ready?'Файлы раздела сохранены для офлайн-работы.':'Офлайн-копия ещё не подтверждена. Откройте раздел с интернетом после обновления приложения.');
  }
  navigator.serviceWorker?.addEventListener('controllerchange',updateNetwork);

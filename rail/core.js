@@ -40,7 +40,7 @@
  }
  // Broad location is only for selecting a document/overview, never for confirming km/PK.
  function overviewLocation(data,lat,lon,accuracy){
-  if(![lat,lon,accuracy].every(Number.isFinite)||accuracy<0||accuracy>25)return null;
+  if(![lat,lon,accuracy].every(Number.isFinite)||accuracy<0||accuracy>100)return null;
   const candidates=[];
   for(const s of data.sections)for(let i=1;i<s.points.length;i++){
    const a=s.points[i-1],b=s.points[i];if(b[0]-a[0]>1500||distance(a,b)>2000)continue;
