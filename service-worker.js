@@ -1,4 +1,4 @@
-const CACHE = 'rabochee-vremya-v36-driver-20261030';
+const CACHE = 'rabochee-vremya-v37-driver-20261030';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const RAIL = ['./track-profile.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/regime-core.js', './rail/regime.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/driver-profile.css'];

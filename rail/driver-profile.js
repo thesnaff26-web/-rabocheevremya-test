@@ -23,13 +23,27 @@
   const a=points.reduce((n,p)=>n+(p[0]-mean)*(p[1]-ym),0)/points.reduce((n,p)=>n+(p[0]-mean)**2,0),b=ym-a*mean;
   // Reject irregular grids rather than silently stretching them to a wrong km.
   if(points.some(p=>Math.abs(a*p[0]+b-p[1])>8))throw Error('Неравномерная сетка: откройте исходный лист');
-  return {a,b,width:page.width,height:page.height,speedTop:row.y+12,trace:trackTrace(xml,page)};
+  const gradeTop=bandBoundary(xml,page);
+  return {a,b,width:page.width,height:page.height,speedTop:row.y+12,gradeTop,trace:trackTrace(xml,{...page,profileBox:[0,gradeTop,page.width,page.profileBox[3]]})};
+ }
+ // Locate the printed divider above the grade table instead of using a fixed crop.
+ function bandBoundary(xml,page){
+  const ys=[];
+  for(const path of xml.querySelectorAll('path[stroke]')){
+   if(path.closest('defs')||path.getAttribute('stroke')!=='rgb(0%, 0%, 0%)')continue;
+   const d=(path.getAttribute('d')||'').trim().match(/^M\s+([-\d.]+)\s+([-\d.]+)\s+L\s+([-\d.]+)\s+([-\d.]+)\s*$/);
+   const m=(path.getAttribute('transform')||'').match(/matrix\(([^)]+)\)/);if(!d||!m)continue;
+   const t=m[1].split(/[ ,]+/).map(Number),x1=+d[1],y1=+d[2],x2=+d[3],y2=+d[4];if(t.length!==6)continue;
+   const a=t[1]*x1+t[3]*y1+t[5],b=t[1]*x2+t[3]*y2+t[5];
+   if(Math.abs(a-b)<1&&Math.abs(t[0]*(x2-x1))>page.width*.75&&a>=page.profileBox[1]&&a<page.profileBox[1]+60)ys.push((a+b)/2);
+  }
+  return ys.length?Math.min(...ys):page.profileBox[1];
  }
  // Sample only the document's long black route curve, outside the glyph definitions.
  function trackTrace(xml,page){
   let best=[];
   for(const path of xml.querySelectorAll('path[stroke]')){
-   if(path.closest('defs')||!/^rgb\(0%, 0%, 0%\)$/.test(path.getAttribute('stroke')||'')||+(path.getAttribute('stroke-width')||0)<1.5)continue;
+   if(path.closest('defs')||!/^rgb\(0%, 0%, 0%\)$/.test(path.getAttribute('stroke')||'')||+(path.getAttribute('stroke-width')||0)<1.2)continue;
    const matrix=(path.getAttribute('transform')||'').match(/matrix\(([^)]+)\)/);
    const t=matrix?matrix[1].split(/[ ,]+/).map(Number):[1,0,0,1,0,0];if(t.length!==6||!t.every(Number.isFinite))continue;
    const tokens=(path.getAttribute('d')||'').match(/[MLCZmlcz]|[-+]?(?:\d*\.)?\d+(?:[eE][-+]?\d+)?/g)||[];
@@ -57,7 +71,7 @@
   for(const e of ordered){
    if(previous){const boundary=direction===1?e.page.start:e.page.end,prevEdge=direction===1?previous.page.end:previous.page.start;
     const py=curveY(previous,boundary),ey=curveY(e,boundary);
-    if(Math.abs(boundary-prevEdge)<1&&py!==null&&ey!==null)shift+=(py-180)/Math.max(100,previous.page.profileBox[1]-180)-(ey-180)/Math.max(100,e.page.profileBox[1]-180);
+    if(Math.abs(boundary-prevEdge)<1&&py!==null&&ey!==null)shift+=(py-180)/Math.max(100,(previous.geo.gradeTop||previous.page.profileBox[1])-180)-(ey-180)/Math.max(100,(e.geo.gradeTop||e.page.profileBox[1])-180);
     else shift=0;
    }
    shifts.set(e.page.file,shift);previous=e;
@@ -102,7 +116,7 @@
     for(const entry of entries){const p=entry.page,g=entry.geo,lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));if(hi<=lo)continue;
      const x0=(lo-r.start)/route.direction/r.span*width,x1=(hi-r.start)/route.direction/r.span*width;
      const left=Math.min(x0,x1),w=Math.abs(x1-x0),block=document.createElement('div');block.style.cssText=`position:absolute;left:${left}px;width:${w}px;top:0;bottom:0;overflow:hidden`;
-     const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?p.profileBox[1]:kind==='speed'?g.speedTop:(y0||0),h=kind==='grade'?p.profileBox[3]:(h0||Math.max(100,p.profileBox[1]-180));
+     const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?g.gradeTop:kind==='speed'?g.speedTop:(y0||0),h=kind==='grade'?p.profileBox[1]+p.profileBox[3]-g.gradeTop:(h0||Math.max(100,g.gradeTop-180));
      const bh=height*(detail?(kind==='speed'?.40:.45):ratio),sy=bh/h/(kind==='landmarks'?alignment.scale:1);
      const image=document.createElement('img');image.alt='';image.src=entry.url;image.style.width=g.width*sx+'px';image.style.height=g.height*sy+'px';
      // kmOrder and direction determine whether the source needs mirroring.
