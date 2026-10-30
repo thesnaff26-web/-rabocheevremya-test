@@ -106,6 +106,7 @@
   function range(c,s){let start=c-route.direction*s*.18;const maxStart=route.direction===1?route.end-s:route.start+s;
    start=route.direction===1?Math.max(route.start,Math.min(maxStart,start)):Math.min(route.end,Math.max(maxStart,start));return {start,end:start+route.direction*s,span:s};}
   function chart(el,r,detail=false){
+   if(state?.mode==='gps'&&!state.valid&&!state.overviewOnly){el.replaceChildren();delete el.dataset.profileSignature;return}
    const width=el.clientWidth;if(!width)return;
    const height=el.clientHeight,alignment=landmarkLayout(entries,route.direction);
    const signature=[route.id,r.span,width,height,detail,...entries.map(e=>e.page.file)].join('|');
@@ -140,7 +141,7 @@
    if(selection!==null&&!detail){const x=(selection-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const mark=document.createElement('div');mark.className='driverSelection';mark.style.left=x+'%';el.append(mark)}}
   }
   function render(){
-   if(destroyed||!route)return;const r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';
+   if(destroyed||!route)return;if(state.mode==='gps'&&!state.valid&&!state.overviewOnly){const el=$('driverChart');el.replaceChildren();delete el.dataset.profileSignature;el.profileTiles=null;$('driverRange').textContent='—';$('driverMessage').textContent='Ожидаем GPS для выбора участка. Подробности — в блоке GPS-следования и точности.';$('driverDetail').hidden=true;return}const r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';
    const doc=viewer.catalog.documents.find(d=>d.id===route.document),lo=Math.min(r.start,r.end),hi=Math.max(r.start,r.end);
    const leaves=doc.leaves.filter(p=>p.route===route.id&&p.start<hi&&p.end>lo),groups=new Map();for(const p of leaves){const k=p.start+':'+p.end;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p)}
    const chosen=[],problems=[];for(const group of groups.values()){if(group.length===1)chosen.push(group[0]);else {const current=group.find(p=>p.number===state.page)||group.find(p=>group.every(l=>l.overviewPage===p.number));if(current)chosen.push(current);else problems.push('В исходнике несколько листов для '+number(group[0].start)+' км')}}
@@ -157,7 +158,7 @@
    const next=viewer.state();state=next;route=viewer.catalog.routes.find(r=>r.id===next.routeId);if(!route)return;
    if(currentRoute!==route.id){center=next.chain;selection=null;follow=true;$('driverDetail').hidden=true;currentRoute=route.id}
    if(center===null||follow)center=next.chain;
-   $('driverPosition').textContent=next.mode==='gps'&&!next.valid?'Км/ПК не определён':(next.mode==='gps'?'≈ ':'')+fmt(next.chain);$('driverRoute').textContent=route.name;for(const [id,d] of [['driverEven',1],['driverOdd',-1]]){$(id).setAttribute('aria-pressed',String(route.direction===d));$(id).style.borderColor=route.direction===d?'var(--driver-accent, #4fe0b2)':'';}
+   $('driverPosition').textContent=next.mode==='gps'&&!next.valid?'Км/ПК не определён':(next.mode==='gps'?'≈ ':'')+fmt(next.chain);$('driverRoute').textContent=next.mode==='gps'&&!next.valid&&!next.overviewOnly?'Определяем участок по GPS…':route.name;for(const [id,d] of [['driverEven',1],['driverOdd',-1]]){$(id).setAttribute('aria-pressed',String(route.direction===d));$(id).style.borderColor=route.direction===d?'var(--driver-accent, #4fe0b2)':'';}
    $('driverMode').textContent=next.mode==='gps'?(next.valid?'GPS · приблизительная позиция':next.overviewOnly?'Участок по GPS · км/ПК не подтверждён':'GPS · позиция не подтверждена'):'Ручной просмотр';
    $('driverHere').textContent=follow?'К позиции':'Вернуться';
    render();
