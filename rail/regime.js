@@ -3,7 +3,7 @@
  const CACHE='rabochee-regime-documents-v1',RC=root.RegimeCore;
  async function create(onPosition){
   const $=id=>document.getElementById(id),res=await fetch('./rail/regime-catalog.json');if(!res.ok)throw Error('Каталог режимок недоступен');
-  const catalog=RC.validate(await res.json());const overrides=new Map();let liveConfirmed=false,overviewOnly=false,positionMode='manual',routeId='ch-odd',chain=6906000,leaf=null,doc=null,focused=true,width=1200,blobUrl=null,loadId=0,loadAbort=null,saveAbort=null;
+  const catalog=RC.validate(await res.json());const overrides=new Map();let positionQuality=null,liveConfirmed=false,overviewOnly=false,positionMode='manual',routeId='ch-odd',chain=6906000,leaf=null,doc=null,focused=true,width=1200,blobUrl=null,loadId=0,loadAbort=null,saveAbort=null;
   const absolute=a=>new URL('./'+a.file,document.baseURI).href;
   const cacheSupported=typeof caches!=='undefined';
   if(!globalThis.crypto?.subtle)throw Error('Для проверки файлов откройте приложение по HTTPS.');
@@ -63,7 +63,7 @@
   }
   function scrollLive(){if(!leaf?.route)return;const fraction=(chain-leaf.start)/(leaf.end-leaf.start),across=activeRoute().direction===1?fraction:1-fraction;$('regimeViewport').scrollLeft=Math.max(0,(.06+.87*across)*width-$('regimeViewport').clientWidth/2)}
   function go(m,options={}){
-   positionMode=options.live?'gps':'manual';overviewOnly=!!options.preview;liveConfirmed=!!options.live&&!overviewOnly;chain=m;inputPosition(m);let result=RC.find(catalog,routeId,m);
+   positionQuality=options.quality||null;positionMode=options.live?'gps':'manual';overviewOnly=!!options.preview;liveConfirmed=!!options.live&&!overviewOnly;chain=m;inputPosition(m);let result=RC.find(catalog,routeId,m);
    if(result.status==='missing'){
     const alternate=RC.autoRoute(catalog,routeId,m);
     if(alternate){const old=activeRoute().document;routeId=alternate.id;$('regimeRoute').value=routeId;if(old!==alternate.document)fillPages();result=RC.find(catalog,routeId,m)}
@@ -102,9 +102,9 @@
    const target=catalog.routes.find(r=>r.document===activeRoute().document&&r.direction===direction);if(!target)return;
    routeId=target.id;$('regimeRoute').value=routeId;fillPages();
    if(positionMode==='gps'&&!leaf){clearImage();message('Путь выбран. Ожидаем GPS-привязку.');return}
-   go(chain,{live:positionMode==='gps',preview:overviewOnly});
+   go(chain,{live:positionMode==='gps',preview:overviewOnly,quality:positionQuality});
   }
-  return {setParity,previewLive(m){go(m,{live:true,preview:true})},readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){liveConfirmed=false;overviewOnly=false;positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy)=>go(m,{live:true,accuracy}),suspendLive(reason){liveConfirmed=false;overviewOnly=false;if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,overviewOnly,valid:!!leaf&&(positionMode!=='gps'||liveConfirmed)}),catalog};
+  return {setParity,previewLive(m){go(m,{live:true,preview:true})},readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){liveConfirmed=false;overviewOnly=false;positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy,quality)=>go(m,{live:true,accuracy,quality}),suspendLive(reason){liveConfirmed=false;overviewOnly=false;if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,overviewOnly,quality:positionQuality,valid:!!leaf&&(positionMode!=='gps'||liveConfirmed)}),catalog};
  }
  root.RegimeViewer={create};
 })(typeof globalThis!=='undefined'?globalThis:this);

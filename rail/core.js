@@ -22,8 +22,9 @@
   const raw=-(ax*dx+ay*dy)/den,t=Math.max(0,Math.min(1,raw));
   const p=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];return {chain:p[0],distance:distance(point,p),raw};
  }
- function locate(data,lat,lon,accuracy,previous){
+ function locate(data,lat,lon,accuracy,previous,now=Date.now()){
   if(![lat,lon,accuracy].every(Number.isFinite)||accuracy<0||accuracy>40)return {ok:false,reason:'Точность GPS недостаточна: нужно 40 м или лучше.'};
+  const detailed=data.geometryMatcher?.locate(lat,lon,accuracy,previous,now);if(detailed)return detailed;
   const candidates=[];
   for(const s of data.sections)for(let i=1;i<s.points.length;i++){
    const a=s.points[i-1],b=s.points[i];
@@ -35,11 +36,12 @@
   candidates.sort((a,b)=>a.distance-b.distance);const best=candidates[0];
   if(!best||best.distance>Math.min(100,accuracy+50))return {ok:false,distance:best?.distance??null,nearestChain:best?.chain??null,reason:best?'GPS в '+Math.round(best.distance)+' м от линии координатной базы. Привязка км/ПК не подтверждена.':'Рядом нет пригодных координатных отрезков базы.'};
   if(candidates.some(c=>Math.abs(c.chain-best.chain)>300&&c.distance<=best.distance+Math.max(15,accuracy)))return {ok:false,reason:'Неоднозначная привязка к пути. Показание скрыто.'};
-  if(previous&&previous.time&&previous.chain&&Date.now()-previous.time<20000&&Math.abs(previous.chain-best.chain)>2500)return {ok:false,reason:'Резкий скачок GPS. Ожидаем устойчивую позицию.'};
-  return {ok:true,...best,accuracy,time:Date.now()};
+  if(previous&&previous.time&&previous.chain&&now-previous.time<20000&&Math.abs(previous.chain-best.chain)>2500)return {ok:false,reason:'Резкий скачок GPS. Ожидаем устойчивую позицию.'};
+  return {ok:true,...best,accuracy,time:now,geometrySource:'archive',chainageSource:'legacy',degraded:accuracy>25};
  }
  // Broad location is only for selecting a document/overview, never for confirming km/PK.
  function overviewLocation(data,lat,lon,accuracy){
+  const detailed=data.geometryMatcher?.overview(lat,lon,accuracy);if(detailed)return detailed;
   if(![lat,lon,accuracy].every(Number.isFinite)||accuracy<0||accuracy>100)return null;
   const candidates=[];
   for(const s of data.sections)for(let i=1;i<s.points.length;i++){

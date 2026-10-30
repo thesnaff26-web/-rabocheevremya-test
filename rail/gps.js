@@ -7,11 +7,11 @@
    const stamp=position?.timestamp,c=position?.coords;
    if(!Number.isFinite(stamp)||now-stamp>10000||stamp-now>2000)return reject('Геопозиция устарела. Ожидаем новый сигнал.');
    if(stamp<=lastStamp)return reject('Ожидаем новое измерение GPS.');if(lastStamp&&stamp-lastStamp>10000){count=0;anchor=null}lastStamp=stamp;
-   if(!c||!Number.isFinite(c.accuracy)||c.accuracy>25||c.accuracy<0)return reject('Недостаточная точность GPS: нужно 25 м или лучше.');
-   const fix=core.locate(data,c.latitude,c.longitude,c.accuracy);
+   if(!c||!Number.isFinite(c.accuracy)||c.accuracy>40||c.accuracy<0)return reject('Недостаточная точность GPS: нужно 40 м или лучше.');
+   const fix=core.locate(data,c.latitude,c.longitude,c.accuracy,anchor,now);
    if(!fix.ok)return reject(fix.reason,fix);
    if(anchor&&stamp-anchor.timestamp<30000){const seconds=(stamp-anchor.timestamp)/1000,limit=Math.max(120,seconds*55+anchor.accuracy+c.accuracy);if(Math.abs(fix.chain-anchor.chain)>limit)return reject('Резкий скачок привязки. Показание скрыто.');}
-   anchor={...fix,timestamp:stamp};count++;
+   const elapsed=anchor?(stamp-anchor.timestamp)/1000:0,chainSpeed=elapsed>0?Math.max(-55,Math.min(55,(fix.chain-anchor.chain)/elapsed)):0;anchor={...fix,timestamp:stamp,chainSpeed};count++;
    if(count<3)return {ok:false,reason:'Проверяем устойчивость GPS: '+count+' / 3.'};
    return {...fix,ok:true,timestamp:stamp,speed:Number.isFinite(c.speed)&&c.speed>=0?c.speed:null};
   }};

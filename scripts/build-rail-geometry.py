@@ -73,7 +73,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, help='Previously downloaded Overpass JSON')
     parser.add_argument('--download', action='store_true', help='Download public OSM data from Overpass')
-    parser.add_argument('--output', type=Path, default=Path('rail/research/mogocha-urusha-osm.geojson'))
+    parser.add_argument('--runtime', action='store_true', help='Mark as experimental runtime geometry with unverified archive chainage')
+    parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     if bool(args.input) == args.download:
         parser.error('Choose exactly one of --input or --download')
@@ -84,6 +85,10 @@ def main():
         with urllib.request.urlopen(request, timeout=55) as response:
             raw = response.read()
     result = build(raw)
+    if args.runtime:
+        result['metadata']['runtime_enabled'] = True
+        result['metadata']['status'] = 'geometry_only_chainage_from_unverified_archive'
+    args.output = args.output or Path('rail/route-geometry.geojson' if args.runtime else 'rail/research/mogocha-urusha-osm.geojson')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix('.tmp')
     temporary.write_text(json.dumps(result, ensure_ascii=False, separators=(',', ':')) + '\n')
