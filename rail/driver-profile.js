@@ -30,7 +30,7 @@
   const fmt=m=>{const x=Math.round(m),km=Math.floor(x/1000),r=x%1000;return `${km} км · ПК ${Math.floor(r/100)+1}`};
   const number=m=>(m/1000).toLocaleString('ru-RU',{maximumFractionDigits:1,useGrouping:false});
   async function source(page){
-   if(!memo.has(page.file))memo.set(page.file,viewer.readPage(page).then(text=>{const geo=geometry(text,page);const url=URL.createObjectURL(new Blob([text],{type:'image/svg+xml'}));urls.add(url);return {page,geo,url}}).catch(e=>{memo.delete(page.file);throw e}));
+   if(!memo.has(page.file))memo.set(page.file,viewer.readPage(page).then(text=>{const geo=geometry(text,page);const display=text.replace(/(<svg\b[^>]*?)>/,(_,tag)=>tag.replace(/\s+preserveAspectRatio="[^"]*"/,'')+' preserveAspectRatio="none">');const url=URL.createObjectURL(new Blob([display],{type:'image/svg+xml'}));urls.add(url);return {page,geo,url}}).catch(e=>{memo.delete(page.file);throw e}));
    return memo.get(page.file);
   }
   function range(c,s){let start=c-route.direction*s*.18;const maxStart=route.direction===1?route.end-s:route.start+s;
