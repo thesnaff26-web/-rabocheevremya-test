@@ -8,18 +8,26 @@
   const cacheSupported=typeof caches!=='undefined';
   if(!globalThis.crypto?.subtle)throw Error('Для проверки файлов откройте приложение по HTTPS.');
   function message(text){$('regimeStatus').textContent=text;queueMicrotask(()=>document.dispatchEvent(new Event('regimechange')))}
-  const reads=new Map();
+  const reads=new Map(),transfers=new Set();let profileQueue=null;
+  function profileProgress(info){
+   const el=$('driverOffline');if(el)el.textContent=info.ready===info.total?'Все профили сохранены офлайн · '+info.total+' листов.':(info.paused?'Нет сети. ':'')+'Профили офлайн: '+info.ready+' из '+info.total+' листов. '+(info.paused?'Сохранение продолжится при появлении связи.':info.failed?'Повторяем загрузку недостающих листов.':'Сохраняем автоматически; не закрывайте карту до завершения.');
+  }
+  function prioritizePages(pages){profileQueue?.prioritize(pages)}
+  function prioritizeRoute(){
+   const r=activeRoute();prioritizePages(catalog.documents.find(d=>d.id===r.document).leaves.filter(p=>p.kind==='profile').sort((a,b)=>(a.route===r.id?0:1)-(b.route===r.id?0:1)||Math.abs((a.start+a.end)/2-chain)-Math.abs((b.start+b.end)/2-chain)));
+  }
   function sharedRead(page){
-   if(!reads.has(page.file))reads.set(page.file,verified(page).finally(()=>reads.delete(page.file)));
+   if(!reads.has(page.file))reads.set(page.file,verified(page).then(bytes=>{document.dispatchEvent(new CustomEvent('regimepagesready',{detail:{file:page.file}}));return bytes}).finally(()=>reads.delete(page.file)));
    return reads.get(page.file);
   }
   async function downloadBytes(url,signal){
-   const controller=new AbortController();let timedOut=false;
+   if(navigator.onLine===false)throw Error('Нет сети. Лист ещё не сохранён офлайн.');
+   const controller=new AbortController();transfers.add(controller);let timedOut=false;
    const cancel=()=>controller.abort();if(signal?.aborted)cancel();signal?.addEventListener('abort',cancel,{once:true});
    const timer=setTimeout(()=>{timedOut=true;controller.abort()},45000);
    try{const response=await fetch(url,{cache:'no-store',signal:controller.signal});if(!response.ok)throw Error('Файл недоступен: '+response.status);return await response.arrayBuffer()}
    catch(e){if(timedOut)throw Error('Лист не загрузился за 45 секунд. Проверьте связь или сохраните режимку офлайн.');throw e}
-   finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel)}
+   finally{transfers.delete(controller);clearTimeout(timer);signal?.removeEventListener('abort',cancel)}
   }
   async function verified(asset,signal){
    const url=absolute(asset);let cache=null,hit=null;
@@ -68,6 +76,7 @@
     const alternate=RC.autoRoute(catalog,routeId,m);
     if(alternate){const old=activeRoute().document;routeId=alternate.id;$('regimeRoute').value=routeId;if(old!==alternate.document)fillPages();result=RC.find(catalog,routeId,m)}
    }
+   prioritizeRoute();
    if(result.status==='ambiguous'){const chosen=overrides.get(routeId+':'+result.leaves[0].start),target=result.leaves.find(l=>l.number===chosen);if(target)result={...result,status:'found',leaves:[target]}}
    if(result.status==='found'&&options.live&&!overviewOnly){const p=result.leaves[0],margin=Math.max(30,options.accuracy||0);if(chain-p.start<margin||p.end-chain<margin){clearImage();message('GPS около границы листов. Профиль скрыт до уточнения позиции.');return}}
    if(result.status==='found'){const target=result.leaves[0];if(leaf?.file===target.file){if(options.live)scrollLive();if($('regimeImage').hidden){message('Открываем лист '+target.number+'…');return}message(positionText());return}focused=true;showPage(target);return}
@@ -96,7 +105,12 @@
    }catch(e){$('regimeOffline').textContent=(e.name==='AbortError'?'Сохранение остановлено.':e.message)+' Уже сохранённые листы остаются; можно продолжить позже.'}
    finally{saveAbort=null;$('regimeSave').disabled=false;$('regimeCancel').hidden=true}
   };
-  $('regimeCancel').onclick=()=>saveAbort?.abort();window.addEventListener('pagehide',()=>{saveAbort?.abort();clearImage()});
+  $('regimeCancel').onclick=()=>saveAbort?.abort();
+  const profiles=catalog.documents.flatMap(d=>d.leaves.filter(p=>p.kind==='profile'));
+  if(cacheSupported&&root.RailOfflinePages){profileQueue=root.RailOfflinePages.create(profiles,async page=>{await sharedRead(page);const cache=await caches.open(CACHE),saved=await cache.match(absolute(page));if(saved?.headers.get('X-Regime-SHA256')!==page.sha256)throw Error('Лист не сохранён офлайн');},profileProgress,{online:()=>navigator.onLine!==false});prioritizeRoute()}
+  window.addEventListener('offline',()=>{for(const transfer of transfers)transfer.abort();profileProgress(profileQueue?.status()||{ready:0,total:profiles.length,paused:true})});
+  window.addEventListener('online',()=>{profileQueue?.resume();document.dispatchEvent(new Event('regimepagesready'))});
+  window.addEventListener('pagehide',()=>{profileQueue?.stop();for(const transfer of transfers)transfer.abort();saveAbort?.abort();clearImage()});
   for(const id of ['regimeRoute','regimePages','regimeGo','regimePlus','regimeMinus','regimeFit'])$(id).disabled=false;$('regimeSave').disabled=!cacheSupported;
   function setParity(direction){
    const target=catalog.routes.find(r=>r.document===activeRoute().document&&r.direction===direction);if(!target)return;
@@ -104,7 +118,7 @@
    if(positionMode==='gps'&&!leaf){clearImage();message('Путь выбран. Ожидаем GPS-привязку.');return}
    go(chain,{live:positionMode==='gps',preview:overviewOnly,quality:positionQuality});
   }
-  return {setParity,previewLive(m){go(m,{live:true,preview:true})},readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){liveConfirmed=false;overviewOnly=false;positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy,quality)=>go(m,{live:true,accuracy,quality}),suspendLive(reason){liveConfirmed=false;overviewOnly=false;if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,overviewOnly,quality:positionQuality,valid:!!leaf&&(positionMode!=='gps'||liveConfirmed)}),catalog};
+  return {prioritizePages,offlineStatus:()=>profileQueue?.status(),setParity,previewLive(m){go(m,{live:true,preview:true})},readPage:async page=>new TextDecoder().decode(await sharedRead(page)),go,beginLive(){liveConfirmed=false;overviewOnly=false;positionMode='gps';clearImage();message('Ожидаем устойчивую GPS-привязку. Профиль скрыт.')},goLive:(m,accuracy,quality)=>go(m,{live:true,accuracy,quality}),suspendLive(reason){liveConfirmed=false;overviewOnly=false;if(positionMode==='gps'){clearImage();message(reason+' Профиль по GPS скрыт.')}},state:()=>({routeId,chain,page:leaf?.number,document:doc?.id,mode:positionMode,overviewOnly,quality:positionQuality,valid:!!leaf&&(positionMode!=='gps'||liveConfirmed)}),catalog};
  }
  root.RegimeViewer={create};
 })(typeof globalThis!=='undefined'?globalThis:this);

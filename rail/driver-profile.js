@@ -85,6 +85,7 @@
    get:p=>records.get(p.file)?.value,
    status:p=>records.get(p.file)?.status||'missing',
    error:p=>records.get(p.file)?.error,
+   retryFailed(file){for(const [key,r] of records)if(r.status==='failed'&&(!file||key===file))records.delete(key)},
    request(p){
     const old=records.get(p.file);if(old&&(old.status!=='failed'||now()-old.at<30000))return old.promise;
     const record={status:'pending',at:now()};records.set(p.file,record);
@@ -94,7 +95,7 @@
  }
  function create(viewer){
   const host=$('driverPanel');if(!host)return;
-  host.innerHTML=`<div class="driverHead"><div><small>ЭЛЕКТРОННЫЙ ПРОФИЛЬ</small><strong id="driverPosition">—</strong><span id="driverMode" class="driverMode">Ручной просмотр</span></div><div class="driverSpeed"><b id="driverSpeed">—</b><span>км/ч · GPS</span></div></div><div class="driverRoute" id="driverRoute"></div><div class="driverActions"><button id="driverGPS">Включить GPS</button><button id="driverSetup">Участок / км</button></div><div class="driverActions" role="group" aria-label="Выбор пути"><button id="driverEven" aria-pressed="false">Чётный</button><button id="driverOdd" aria-pressed="true">Нечётный</button></div><div class="driverScales" role="group" aria-label="Ширина обзора"><span>Обзор</span>${[3,5,10,20].map(n=>`<button data-span="${n}" aria-pressed="${n===10}" class="${n===10?'active':''}">${n} км</button>`).join('')}</div><div class="driverChart" id="driverChart" role="img" tabindex="0" aria-label="Обзор пути. Нажмите для подробностей, стрелки для перемещения."></div><div class="driverFoot"><span id="driverRange">—</span><span>По ходу движения →</span></div><p id="driverMessage" role="status">Загружаем профиль…</p><div class="driverDetail" id="driverDetail" hidden><header><b id="driverDetailTitle"></b><button id="driverCloseDetail" aria-label="Закрыть подробности">×</button></header><div class="driverChart" id="driverDetailChart"></div></div><div class="driverActions"><button id="driverBack">← Обзор</button><button id="driverHere">К позиции</button><button id="driverNext">Обзор →</button></div><p class="driverNote">Ограничения и уклоны — из режимки 2026. Нажмите на участок для подробностей. GPS-привязка приблизительная; текущие огни светофоров не поступают. Геометрия: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, ODbL.</p>`;
+  host.innerHTML=`<div class="driverHead"><div><small>ЭЛЕКТРОННЫЙ ПРОФИЛЬ</small><strong id="driverPosition">—</strong><span id="driverMode" class="driverMode">Ручной просмотр</span></div><div class="driverSpeed"><b id="driverSpeed">—</b><span>км/ч · GPS</span></div></div><div class="driverRoute" id="driverRoute"></div><div class="driverActions"><button id="driverGPS">Включить GPS</button><button id="driverSetup">Участок / км</button></div><div class="driverActions" role="group" aria-label="Выбор пути"><button id="driverEven" aria-pressed="false">Чётный</button><button id="driverOdd" aria-pressed="true">Нечётный</button></div><div class="driverScales" role="group" aria-label="Ширина обзора"><span>Обзор</span>${[3,5,10,20].map(n=>`<button data-span="${n}" aria-pressed="${n===10}" class="${n===10?'active':''}">${n} км</button>`).join('')}</div><div class="driverChart" id="driverChart" role="img" tabindex="0" aria-label="Обзор пути. Нажмите для подробностей, стрелки для перемещения."></div><div class="driverFoot"><span id="driverRange">—</span><span>По ходу движения →</span></div><p id="driverOffline" role="status" class="driverNote"></p><p id="driverMessage" role="status">Загружаем профиль…</p><div class="driverDetail" id="driverDetail" hidden><header><b id="driverDetailTitle"></b><button id="driverCloseDetail" aria-label="Закрыть подробности">×</button></header><div class="driverChart" id="driverDetailChart"></div></div><div class="driverActions"><button id="driverBack">← Обзор</button><button id="driverHere">К позиции</button><button id="driverNext">Обзор →</button></div><p class="driverNote">Ограничения и уклоны — из режимки 2026. Нажмите на участок для подробностей. GPS-привязка приблизительная; текущие огни светофоров не поступают. Геометрия: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a>, ODbL.</p>`;
   let span=10000,center=null,follow=true,selection=null,sequence=0,route=null,state=null,entries=[],destroyed=false;
   const memo=new Map(),urls=new Set();let currentRoute=null;const tiles=createPageStore(source,()=>{if(!destroyed)render()});
   const fmt=m=>{const x=Math.round(m),km=Math.floor(x/1000),r=x%1000;return `${km} км · ПК ${Math.floor(r/100)+1}`};
@@ -146,7 +147,7 @@
    const leaves=doc.leaves.filter(p=>p.route===route.id&&p.start<hi&&p.end>lo),groups=new Map();for(const p of leaves){const k=p.start+':'+p.end;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p)}
    const chosen=[],problems=[];for(const group of groups.values()){if(group.length===1)chosen.push(group[0]);else {const current=group.find(p=>p.number===state.page)||group.find(p=>group.every(l=>l.overviewPage===p.number));if(current)chosen.push(current);else problems.push('В исходнике несколько листов для '+number(group[0].start)+' км')}}
    entries=chosen.map(p=>tiles.get(p)).filter(Boolean);
-   for(const p of chosen)tiles.request(p);
+   viewer.prioritizePages?.(chosen);for(const p of chosen)tiles.request(p);
    const pending=chosen.filter(p=>tiles.status(p)==='pending').length;
    for(const p of chosen)if(tiles.status(p)==='failed')problems.push('Лист '+p.number+': '+tiles.error(p).message);
    // Explicit gaps remain blank; duplicate pages and route boundaries are never filled with guesses.
@@ -179,8 +180,11 @@
   }
   el.addEventListener('pointerup',e=>release(e));el.addEventListener('pointercancel',e=>release(e,true));el.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();shift(e.key==='ArrowRight'?1:-1)}};
   $('driverCloseDetail').onclick=()=>{selection=null;$('driverDetail').hidden=true;chart(el,range(center,span))};
+  let retryFrame=0;const recover=event=>{if(destroyed)return;tiles.retryFailed(event.detail?.file);cancelAnimationFrame(retryFrame);retryFrame=requestAnimationFrame(()=>render())};
+  window.addEventListener('online',recover);document.addEventListener('regimepagesready',recover);
+  const retryTimer=setInterval(()=>{if(navigator.onLine!==false&&!destroyed)render()},5000);
   let frame=0;document.addEventListener('regimechange',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(update)});const resize=new ResizeObserver(()=>{if(route){chart(el,range(center,span));if(selection!==null)detail()}});resize.observe(el);
-  window.addEventListener('pagehide',()=>{destroyed=true;obs.disconnect();resize.disconnect();urls.forEach(url=>URL.revokeObjectURL(url))},{once:true});
+  window.addEventListener('pagehide',()=>{destroyed=true;clearInterval(retryTimer);cancelAnimationFrame(retryFrame);window.removeEventListener('online',recover);document.removeEventListener('regimepagesready',recover);obs.disconnect();resize.disconnect();urls.forEach(url=>URL.revokeObjectURL(url))},{once:true});
   update();
  }
  root.DriverProfile={create,geometry,curveY,landmarkLayout,createPageStore};
