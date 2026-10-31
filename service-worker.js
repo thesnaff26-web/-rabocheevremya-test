@@ -1,4 +1,4 @@
-const CACHE = 'rabochee-vremya-v43-geometry-20261031';
+const CACHE = 'rabochee-vremya-v44-all-geometry-20261031';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const RAIL = ['./track-profile.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/driver-profile.css'];
@@ -43,7 +43,7 @@ self.addEventListener('install', event => {
     }));
     // Require a complete module cache before activating; leave the old worker on failure.
     await Promise.all(RAIL.map(async path => {
-      const response = await fetchFresh(path, path.endsWith('.geojson') ? 15000 : 5000, path.endsWith('.geojson'));
+      const response = await fetchFresh(path, path.endsWith('.geojson') ? 60000 : 5000, path.endsWith('.geojson'));
       if (!response.ok || response.type !== 'basic') throw new Error('Rail asset unavailable');
       await cache.put(path, response);
     }));

@@ -21,7 +21,13 @@ assert(Math.abs(C.locate(data,p.coords.latitude,p.coords.longitude,5).chain-6900
 data.sections=structuredClone(base.sections);data.geometryMatcher.refresh(data);assert(Math.abs(C.locate(data,p.coords.latitude,p.coords.longitude,5).chain-6900500)<1);
 assert.throws(()=>G.create({type:'FeatureCollection',features:[]},base,C));assert.throws(()=>G.create({...geo,features:[feature('bad',[[NaN,50],[120,50]])]},base,C));
 const actual=JSON.parse(fs.readFileSync(path.join(__dirname,'../rail/route-geometry.geojson'))),legacy=JSON.parse(fs.readFileSync(path.join(__dirname,'../rail/corridor.json')));
-console.time('Actual geometry indexing');const matcher=G.create(actual,legacy,C);console.timeEnd('Actual geometry indexing');assert(matcher.stats().edges>9000);
+console.time('Actual geometry indexing');const matcher=G.create(actual,legacy,C);console.timeEnd('Actual geometry indexing');assert(matcher.stats().edges>9000);for(const section of legacy.sections)assert(matcher.stats().sections[section.id]>100,'Detailed geometry must exist in each archived section');
 // Sample a public geometry vertex rather than storing a user's GPS history.
 const way=actual.features.find(f=>f.properties.usage==='main'&&!f.properties.service&&f.geometry.coordinates.some(([lon,lat])=>lon>121.98&&lon<122&&lat>53.98&&lat<54));const [lon,lat]=way.geometry.coordinates.find(([lon,lat])=>lon>121.98&&lon<122&&lat>53.98&&lat<54);const observed=matcher.locate(lat,lon,5);assert(observed?.ok);assert(observed.distance<1);
+// Coverage is no longer limited to Mogocha–Urusha: each archived section is eligible.
+for(const [chain,lat,lon] of [[5639000,51.8,107.6],[6700000,53.5,119],[8536000,48.4,135.1]]){
+ const section={id:'range-'+chain,start:chain,end:chain+1000,points:[[chain,lat,lon],[chain+1000,lat,lon+.01]],grades:[],stations:[]};
+ const wide=G.create({type:'FeatureCollection',features:[feature('range',[[lon,lat],[lon+.01,lat]])]},{sections:[section]},C);
+ assert(wide.locate(lat,lon+.005,5)?.ok,'All corridor ranges must be eligible');
+}
 console.log('PASS detailed curves, 32m GPS with degraded flag, 41m rejection, jump rejection, section overview, off-track rejection, archive fallback, local calibration refresh, real-data integrity');

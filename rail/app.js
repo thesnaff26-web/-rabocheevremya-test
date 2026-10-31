@@ -3,12 +3,12 @@
  const low=5639000,high=8537600;
  function node(tag,attrs,text){const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;return n}
  async function loadGeometry(){
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),60000);
   try{
    const r=await fetch('./rail/route-geometry.geojson',{signal:controller.signal});if(!r.ok)throw Error('HTTP '+r.status);const bytes=await r.arrayBuffer();
-   const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!=='d0fb4124d63ed7c55534b135b25a9187fabf9e17f49ac04edc5cef7ce4a59eb5')throw Error('Файл геометрии не совпадает с версией приложения');
+   const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!=='a35bffbfac9cd653f2da2e55fa8c42b66dc12086af895f70574ead0003d6d3c6')throw Error('Файл геометрии не совпадает с версией приложения');
    data.geometryMatcher=RailGeometry.create(JSON.parse(new TextDecoder().decode(bytes)),data,C);
-   $('geometryInfo').textContent='Подробная линия Могоча — Уруша подключена. Км/ПК рассчитывается по архивным отметкам и не проверен на всём участке.';
+   $('geometryInfo').textContent='Подробная линия Улан-Удэ — Хабаровск подключена. Км/ПК рассчитывается по архивным отметкам и не проверен на всём участке.';
   }catch(e){$('geometryInfo').textContent='Подробная линия не загружена. Используется архивная координатная база. '+(e.name==='AbortError'?'Истекло время загрузки.':e.message)}finally{clearTimeout(timer)}
  }
  function showError(message){$('error').textContent=message}
@@ -70,12 +70,12 @@
   $('start').disabled=!regime;$('start').onclick=()=>{rawHint=null;rawFix=null;$('gpsDiagnostic').textContent='Ожидаем координаты телефона…';regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
   window.addEventListener('pagehide',()=>gps.stop());document.addEventListener('visibilitychange',()=>{if(document.hidden)gps.stop('Экран скрыт: GPS приостановлен. Включите следование после возвращения.')});
   render();
-  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1047', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
+  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1048', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
   updateNetwork();
  }catch(e){['start','viewRange','stations','go','prev','next','mapPlus','mapMinus','mapAll'].forEach(id=>$(id).disabled=true);showError('Не удалось открыть карту. Подключитесь к сети и повторно откройте раздел. '+e.message);$('status').textContent='База не загружена.'}
  async function updateNetwork(){
   let ready=false;
-  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v43-geometry-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/calibration.js','./rail/geometry.js','./rail/route-geometry.geojson','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
+  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v44-all-geometry-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/calibration.js','./rail/geometry.js','./rail/route-geometry.geojson','./rail/regime-core.js','./rail/regime.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
   $('offline').textContent=(navigator.onLine?'Интернет доступен. ':'Нет сети. ')+(ready?'Файлы раздела сохранены для офлайн-работы.':'Офлайн-копия ещё не подтверждена. Откройте раздел с интернетом после обновления приложения.');
  }
  navigator.serviceWorker?.addEventListener('controllerchange',updateNetwork);
