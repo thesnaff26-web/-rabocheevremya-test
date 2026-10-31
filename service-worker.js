@@ -1,4 +1,4 @@
-const CACHE = 'rabochee-vremya-v45-offline-profiles-20261031';
+const CACHE = 'rabochee-vremya-v46-clean-profile-20261031';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const RAIL = ['./track-profile.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/driver-profile.css'];

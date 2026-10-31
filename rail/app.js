@@ -8,8 +8,8 @@
    const r=await fetch('./rail/route-geometry.geojson',{signal:controller.signal});if(!r.ok)throw Error('HTTP '+r.status);const bytes=await r.arrayBuffer();
    const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');if(digest!=='a35bffbfac9cd653f2da2e55fa8c42b66dc12086af895f70574ead0003d6d3c6')throw Error('Файл геометрии не совпадает с версией приложения');
    data.geometryMatcher=RailGeometry.create(JSON.parse(new TextDecoder().decode(bytes)),data,C);
-   $('geometryInfo').textContent='Подробная линия Улан-Удэ — Хабаровск подключена. Км/ПК рассчитывается по архивным отметкам и не проверен на всём участке.';
-  }catch(e){$('geometryInfo').textContent='Подробная линия не загружена. Используется архивная координатная база. '+(e.name==='AbortError'?'Истекло время загрузки.':e.message)}finally{clearTimeout(timer)}
+   $('geometryInfo').textContent='Линия пути загружена. GPS-привязка км/ПК приблизительная.';
+  }catch(e){$('geometryInfo').textContent='Подробная линия не загружена. Используется резервная привязка. '+(e.name==='AbortError'?'Истекло время загрузки.':e.message)}finally{clearTimeout(timer)}
  }
  function showError(message){$('error').textContent=message}
  function render(syncRegime=true){
@@ -44,8 +44,6 @@
   ['viewRange','stations','go','prev','next'].forEach(id=>$(id).disabled=false);
   const list=data.sections.flatMap(s=>s.stations).sort((a,b)=>a[0]-b[0]),names=new Set();
   for(const [m,name] of list){if(names.has(name))continue;names.add(name);const o=document.createElement('option');o.value=m;o.textContent=name+' · '+Math.floor(m/1000)+' км';$('stations').append(o)}
-  $('coverage').textContent='Исходная база: '+data.sections.length+' части, '+data.sections.reduce((n,s)=>n+s.points.length,0)+' координатных точек. Покрытие профиля: '+C.coverage(data).map(r=>(r[0]/1000).toFixed(1)+'–'+(r[1]/1000).toFixed(1)+' км').join('; ')+'.';
-  for(const [i,s] of data.sections.entries()){let p=document.createElement('p'),a=document.createElement('a');a.href=s.source;a.textContent='Исходная электронная карта · часть '+(i+1);a.rel='noopener';a.target='_blank';p.append(a);$('sources').append(p)}
   map=RailMap.create($('routeMap'),data,move,message=>{$('mapMessage').textContent=message});
   map.select(center);$('mapPlus').disabled=false;$('mapMinus').disabled=false;$('mapAll').disabled=false;
   $('mapPlus').onclick=map.zoomIn;$('mapMinus').onclick=map.zoomOut;$('mapAll').onclick=map.overview;
@@ -53,7 +51,7 @@
   await loadGeometry();
   gps=RailGPS.create(data,{
    measure(position){rawFix=position;const c=position.coords;rawHint=C.overviewLocation(data,c.latitude,c.longitude,c.accuracy);$('gpsDiagnostic').textContent='Координаты телефона: '+c.latitude.toFixed(6)+', '+c.longitude.toFixed(6)+'. Измерение: '+new Date(position.timestamp).toLocaleTimeString();},
-   fix(fix){liveFix=fix;$('position').textContent='≈ '+C.formatPicket(fix.chain);$('accuracy').textContent=Math.round(fix.accuracy)+' м';$('offset').textContent=Math.round(fix.distance)+' м';$('speed').textContent=fix.speed===null?'—':Math.round(fix.speed*3.6)+' км/ч';$('status').textContent=(fix.geometrySource==='osm'?'GPS сопоставлен с подробной линией пути. Км/ПК — по архивным отметкам; точность пикета не подтверждена.':'Автоследование по архивной линии. Км/ПК приблизительный.')+(fix.degraded?' Пониженная точность GPS: '+Math.round(fix.accuracy)+' м.':'');center=fix.chain;map?.select(center);render(false);$('centerLabel').textContent='GPS ≈ '+C.formatPicket(center);regime?.goLive(center,fix.accuracy,{geometrySource:fix.geometrySource,degraded:!!fix.degraded})},
+   fix(fix){liveFix=fix;$('position').textContent='≈ '+C.formatPicket(fix.chain);$('accuracy').textContent=Math.round(fix.accuracy)+' м';$('offset').textContent=Math.round(fix.distance)+' м';$('speed').textContent=fix.speed===null?'—':Math.round(fix.speed*3.6)+' км/ч';$('status').textContent='GPS-следование включено. Км/ПК приблизительный.'+(fix.degraded?' Пониженная точность GPS: '+Math.round(fix.accuracy)+' м.':'');center=fix.chain;map?.select(center);render(false);$('centerLabel').textContent='GPS ≈ '+C.formatPicket(center);regime?.goLive(center,fix.accuracy,{geometrySource:fix.geometrySource,degraded:!!fix.degraded})},
    lost(reason,details={}){liveFix=null;$('position').textContent='Км/ПК не определён';const c=rawFix?.coords,fresh=rawFix&&Date.now()-rawFix.timestamp<=10000;$('offset').textContent=Number.isFinite(details.distance)?Math.round(details.distance)+' м':'—';$('speed').textContent=fresh&&Number.isFinite(c.speed)&&c.speed>=0?Math.round(c.speed*3.6)+' км/ч':'—';$('accuracy').textContent=fresh&&Number.isFinite(c.accuracy)?Math.round(c.accuracy)+' м':'—';$('status').textContent=reason;if(fresh&&rawHint&&gps?.isActive()){regime?.previewLive(rawHint.chain);$('gpsPath').textContent='Участок по GPS: '+regime.catalog.routes.find(r=>r.id===regime.state().routeId).name;$('status').textContent=reason+' Участок выбран по GPS; обзор приблизительный.';}else regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
    state(active){$('start').disabled=active||!regime;$('stop').disabled=!active}
   });
@@ -70,12 +68,12 @@
   $('start').disabled=!regime;$('start').onclick=()=>{rawHint=null;rawFix=null;$('gpsDiagnostic').textContent='Ожидаем координаты телефона…';regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
   window.addEventListener('pagehide',()=>gps.stop());document.addEventListener('visibilitychange',()=>{if(document.hidden)gps.stop('Экран скрыт: GPS приостановлен. Включите следование после возвращения.')});
   render();
-  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1049', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
+  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1050', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
   updateNetwork();
  }catch(e){['start','viewRange','stations','go','prev','next','mapPlus','mapMinus','mapAll'].forEach(id=>$(id).disabled=true);showError('Не удалось открыть карту. Подключитесь к сети и повторно откройте раздел. '+e.message);$('status').textContent='База не загружена.'}
  async function updateNetwork(){
   let ready=false;
-  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v45-offline-profiles-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/calibration.js','./rail/geometry.js','./rail/route-geometry.geojson','./rail/regime-core.js','./rail/regime.js', './rail/offline-pages.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
+  try{if('caches'in window){const cache=await caches.open('rabochee-vremya-v46-clean-profile-20261031');ready=(await Promise.all(['./track-profile.html','./rail/core.js','./rail/map.js','./rail/app.js','./rail/corridor.json','./rail/gps.js','./rail/calibration.js','./rail/geometry.js','./rail/route-geometry.geojson','./rail/regime-core.js','./rail/regime.js', './rail/offline-pages.js','./rail/regime-catalog.json','./rail/driver-profile.js','./rail/driver-profile.css'].map(p=>cache.match(p)))).every(Boolean)}}catch(_){}
   $('offline').textContent=(navigator.onLine?'Интернет доступен. ':'Нет сети. ')+(ready?'Файлы раздела сохранены для офлайн-работы.':'Офлайн-копия ещё не подтверждена. Откройте раздел с интернетом после обновления приложения.');
  }
  navigator.serviceWorker?.addEventListener('controllerchange',updateNetwork);
