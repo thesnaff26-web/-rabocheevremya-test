@@ -927,8 +927,18 @@ function nightMinutes(a,b){
  return total
 }
 function holidayMinutes(a,b){
- if(!a||!b)return 0;let A=new Date(a).getTime(),B=new Date(b).getTime();if(!(B>A))return 0;let total=0,cur=new Date(A);cur.setHours(0,0,0,0);
- while(cur.getTime()<B){let next=new Date(cur);next.setDate(next.getDate()+1);if(isFederalHolidayDate(cur))total+=Math.max(0,Math.min(B,next)-Math.max(A,cur))/60000;cur=next}return total
+ if(!a||!b)return 0;
+ const A=new Date(a).getTime(),B=new Date(b).getTime();
+ if(!(B>A))return 0;
+ // Ввод маршрутов — МСК; праздничные сутки — местные (как ночные часы).
+ const off=getOffset()*3600000,LA=new Date(A+off),LB=new Date(B+off);
+ let cur=new Date(LA.getFullYear(),LA.getMonth(),LA.getDate()),total=0;
+ while(cur.getTime()<LB.getTime()){
+  const following=new Date(cur);following.setDate(following.getDate()+1);
+  if(isFederalHolidayDate(cur))total+=Math.max(0,Math.min(LB.getTime(),following.getTime())-Math.max(LA.getTime(),cur.getTime()))/60000;
+  cur=following;
+ }
+ return total;
 }
 function work(r){let t=0;for(let i=1;i<=r.legCount;i++)t+=mins(r['call'+i],r['end'+i]);return t}function night(r){let t=0;for(let i=1;i<=r.legCount;i++)t+=nightMinutes(r['call'+i],r['end'+i]);return t}function passenger(r){let t=0;for(let i=1;i<=r.legCount;i++)t+=mins(r['passengerStart'+i],r['passengerEnd'+i]);return t}function complete(r){for(let i=1;i<=r.legCount;i++)if(!legComplete(r,i))return false;return true}
 function inMonth(d,y,m){return d&&d.getFullYear()===y&&d.getMonth()===m}
