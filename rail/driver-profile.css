@@ -25,3 +25,19 @@
 #userSpeedManager .userImport{padding:9px;border:1px solid #31475d;border-radius:10px}
 #userSpeedManager .userImport input{width:100%;max-width:195px;font-size:11px;padding:4px}
 #userSpeedManager [hidden]{display:none!important}
+
+/* Personal speed overlay / warning-distance / Moscow time editor */
+.userSpeedDistance{margin:0 11px 9px;padding:9px 12px;border:1px solid #3e5b72;background:#14273a;border-radius:10px;color:#e6f0fc;font-size:12px;line-height:1.35;font-weight:650}
+#userSpeedManager .userTimePick{width:100%;text-align:center;font-size:16px!important;font-weight:750;padding:13px 9px;border-radius:12px;background:#17283a;color:#f8fafc;border:1px solid #4d6980}
+#userSpeedManager .userTimeOverlay[hidden]{display:none!important}
+#userSpeedManager .userTimeOverlay{position:fixed;z-index:10002;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center}
+#userSpeedManager .userTimeSheet{width:min(520px,100%);padding:12px 12px calc(20px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;background:#102032;box-shadow:0 -20px 45px #0008;border:1px solid #456077}
+#userSpeedManager .userTimeHead{display:flex;align-items:center;justify-content:space-between;gap:6px}
+#userSpeedManager .userTimeHead b{font-size:15px;text-align:center}
+#userSpeedManager .userTimeHead button{background:transparent;border:0;color:#a8dfeb;font-size:14px;padding:13px 7px}
+#userSpeedManager .userTimeWheels{display:grid;grid-template-columns:.85fr 1fr 1.1fr .82fr .82fr;gap:5px;margin:14px 0}
+#userSpeedManager .userTimeWheels label{min-width:0;text-align:center;font-size:11px;color:#9ab0c4}
+#userSpeedManager .userTimeWheels select{width:100%;padding:14px 2px;text-align:center;font-size:17px;color:#f7fafc;background:#1d364c;border:1px solid #4d6980;border-radius:9px}
+#userSpeedManager .userTimeFoot{display:flex;gap:9px}
+#userSpeedManager .userTimeFoot button{flex:1;background:#1d364c;border:1px solid #4d6980;color:#f7fafc;border-radius:10px;padding:11px}
+#userSpeedManager input[type=hidden]{display:none}
