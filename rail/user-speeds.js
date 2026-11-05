@@ -88,22 +88,31 @@ function init(){
  $('userSpeedImport').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;const data=JSON.parse(await file.text());if(data.format!=='rail-user-speeds-v1'||!Array.isArray(data.records)||!data.records.every(valid))throw Error('Неподдерживаемая резервная копия');if(!confirm('Добавить '+data.records.length+' записей из копии? Существующие не будут удалены.'))return;const known=new Set(records.map(x=>x.id));records.push(...data.records.filter(x=>!known.has(x.id)));persist();}catch(err){alert('Ошибка импорта: '+err.message)}finally{e.target.value=''}};
  toggle();initTimePicker();syncTimeButtons();list();
 }
-function render(el,r,currentRoute,cb){
+
+function distanceInfo(pos){
+ let div=$('userSpeedDistance');if(!div){div=document.createElement('div');div.id='userSpeedDistance';div.className='userSpeedDistance';$('driverChart')?.insertAdjacentElement('beforebegin',div);}
+ if(!div)return;
+ if(!pos||!pos.valid||pos.mode!=='gps'||!Number.isFinite(pos.chain)){div.textContent='Расстояние до предупреждения: включите GPS и дождитесь подтверждённого км/ПК';return;}
+ const next=records.filter(a=>a.routeId===route?.id&&a.type==='temporary'&&a.end!=null&&active(a)&&shown.temporary&&(a.category==='all'||a.category===category)).map(a=>({...a,dist:(a.start-pos.chain)*route.direction})).filter(a=>a.dist>=0).sort((a,b)=>a.dist-b.dist)[0];
+ div.textContent=next?'До временного ограничения '+next.speed+' км/ч: ≈ '+(next.dist>=1000?(next.dist/1000).toFixed(2)+' км':Math.round(next.dist)+' м')+' (GPS)':'Впереди нет подтверждённых действующих временных ограничений в личной базе';
+}
+function render(el,r,currentRoute,cb,position){
  route=currentRoute;rerender=cb||(()=>{});init();list();
  const prev=el.querySelector('.userSpeedOverlay');if(prev)prev.remove();
+ if(el.id==='driverChart')distanceInfo(position);
  if(!route)return;
  const manualPreview=el.id==='driverChart'&&typeof document!=='undefined'&&document.getElementById('driverMode')?.textContent?.includes('Ручной');
  const items=records.filter(a=>a.routeId===route.id&&shown[a.type]&&(a.category==='all'||a.category===category)&&(active(a)||manualPreview));
  const n=document.createElement('div');n.className='userSpeedOverlay';n.setAttribute('aria-hidden','true');
- const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 1000 130');svg.setAttribute('preserveAspectRatio','none');n.append(svg);
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const w=Math.max(260,el.clientWidth||320);svg.setAttribute('viewBox','0 0 '+w+' 130');svg.setAttribute('preserveAspectRatio','none');n.append(svg);
  const NS='http://www.w3.org/2000/svg',make=(tag,attrs,str)=>{const node=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,v);if(str!=null)node.textContent=str;svg.append(node)};
- const x=m=>(m-r.start)/route.direction/r.span*1000,y=s=>114-Math.min(120,Math.max(0,s))*0.82;
+ const x=m=>(m-r.start)/route.direction/r.span*w,y=s=>114-Math.min(120,Math.max(0,s))*0.82;
  for(const a of items){
- if(a.type==='tp'){for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){const cx=x(m);if(cx<0||cx>1000)continue;make('circle',{cx,cy:120,r:9,fill:active(a)?color:'#8493a3','fill-opacity':active(a)?1:.65});make('text',{x:cx,y:124,'text-anchor':'middle','font-size':12,'font-weight':800,fill:'#081321'},t)}continue}
- const x1=x(a.start),x2=x(a.end),left=Math.max(0,Math.min(x1,x2)),right=Math.min(1000,Math.max(x1,x2));if(right<=left)continue;const sy=y(a.speed),isActive=active(a),color=!isActive?'#94a3b8':a.type==='permanent'?'#f1f5f9':'#fb7185';
- make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':3,...(!isActive?{'stroke-dasharray':'8 6'}:{})});for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:126,stroke:color,'stroke-width':1,'stroke-opacity':.42});
- make('text',{x:(left+right)/2,y:Math.max(12,sy-6),'text-anchor':'middle','font-size':16,'font-weight':800,fill:color},String(a.speed));
- if(!isActive)make('text',{x:(left+right)/2,y:Math.min(125,sy+17),'text-anchor':'middle','font-size':11,fill:'#cbd5e1'},status(a)==='upcoming'?'ПОЗЖЕ':'ИСТЕКЛО');
+ if(a.type==='tp'){for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){const cx=x(m);if(cx<0||cx>w)continue;make('circle',{cx,cy:118,r:11,fill:active(a)?color:'#8493a3','fill-opacity':active(a)?1:.65});make('text',{x:cx,y:122,'text-anchor':'middle','font-size':14,'font-weight':800,fill:'#081321'},t)}continue}
+ const x1=x(a.start),x2=a.end==null?x1:x(a.end),left=Math.max(0,Math.min(x1,x2)),right=Math.min(w,Math.max(x1,x2));if(right<=left&&a.end!=null)continue;if(a.end==null&&(x1<0||x1>w))continue;const sy=y(a.speed),isActive=active(a),color=!isActive?'#94a3b8':a.type==='permanent'?'#f1f5f9':'#fb7185';
+ if(a.end!=null){make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':3,...(!isActive?{'stroke-dasharray':'5 4'}:{})});for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:126,stroke:color,'stroke-width':1,'stroke-opacity':.42});}else make('circle',{cx:x1,cy:sy,r:5,fill:color});
+ make('text',{x:a.end==null?Math.max(22,Math.min(w-22,x1)):(left+right)/2,y:Math.max(21,sy-8),'text-anchor':'middle','font-size':23,'font-weight':900,fill:color,stroke:'#101d2c','stroke-width':2.5,'paint-order':'stroke'},String(a.speed));
+ if(!isActive&&right-left>38)make('text',{x:(left+right)/2,y:Math.min(127,sy+18),'text-anchor':'middle','font-size':12,fill:'#cbd5e1'},status(a)==='upcoming'?'ПОЗЖЕ':status(a)==='unverified'?'БЕЗ СРОКА':'ИСТЕКЛО');
  }
  el.append(n);
 }
