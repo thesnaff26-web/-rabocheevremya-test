@@ -140,7 +140,7 @@
    for(let m=Math.ceil(lo/step)*step;m<=hi;m+=step){const x=(m-r.start)/route.direction/r.span*100;if(x<3||x>97)continue;const tick=document.createElement('div');tick.className='driverTick';tick.style.left=x+'%';const label=document.createElement('span');label.textContent=number(m);tick.append(label);axis.append(tick)}el.append(axis);
    if(state.valid){const x=(state.chain-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const marker=document.createElement('div');marker.className='driverMarker';marker.style.left=x+'%';el.append(marker)}}
    if(selection!==null&&!detail){const x=(selection-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const mark=document.createElement('div');mark.className='driverSelection';mark.style.left=x+'%';el.append(mark)}}
-   if(root.UserSpeeds)root.UserSpeeds.render(el,r,route,render);
+   if(root.UserSpeeds)root.UserSpeeds.render(el,r,route,render,state);
   }
   function render(){
    if(destroyed||!route)return;if(state.mode==='gps'&&!state.valid&&!state.overviewOnly){const el=$('driverChart');el.replaceChildren();delete el.dataset.profileSignature;el.profileTiles=null;$('driverRange').textContent='—';$('driverMessage').textContent='Ожидаем GPS для выбора участка.';$('driverDetail').hidden=true;return}const r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';
