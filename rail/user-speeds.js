@@ -8,13 +8,16 @@ function valid(a){return a&&typeof a.id==='string'&&typeof a.routeId==='string'&
 function persist(){localStorage.setItem(KEY,JSON.stringify(records));rerender();list();}
 function metres(km,pk){const k=Number(km),p=Number(pk);if(!Number.isInteger(k)||!Number.isInteger(p)||p<1||p>10||k<5000||k>9000)throw Error('Проверьте километр и пикет (1–10)');return k*1000+(p-1)*100;}
 function stamp(s){if(!s||typeof s!=='string')return null;const n=Date.parse(s+':00+03:00');return Number.isFinite(n)?n:null;}
-function active(a){if(a.type==='permanent')return true;const now=Date.now(),begin=stamp(a.begin),end=stamp(a.endTime);return (!begin||now>=begin)&&(!end||now<=end);}
+function status(a){if(a.type==='permanent')return 'active';const now=Date.now(),begin=stamp(a.begin),end=a.untilCancel?null:stamp(a.endTime);if(begin!==null&&now<begin)return 'upcoming';if(end!==null&&now>end)return 'expired';return 'active';}
+function active(a){return status(a)==='active';}
+function nowMoscow(){return new Date(Date.now()+3*3600000).toISOString().slice(0,16);}
+function statusLabel(a){const s=status(a);return s==='upcoming'?'Ещё не началось (МСК)':s==='expired'?'Срок истёк (МСК)':'Действует по времени (МСК)';}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function point(a){const km=Math.floor(a/1000),pk=Math.floor(a%1000/100)+1;return km+' км ПК'+pk;}
 function categoryName(s){return {passenger:'Пассажирский',freight:'Грузовой',empty:'Порожний',all:'Все'}[s]||s;}
 function list(){
  const el=$('userSpeedList');if(!el)return;const selection=records.filter(a=>!route||a.routeId===route.id);
- el.innerHTML=selection.length?selection.map(a=>'<div class="userSpeedItem"><div><b>'+esc(a.type==='tp'?'ТП · 3 точки':a.speed+' км/ч')+'</b> · '+esc(a.type==='permanent'?'Постоянная':a.type==='temporary'?'Временная':'Токоприёмник')+'<small>'+esc(point(a.start))+(a.type==='tp'?' → '+point(a.lower)+' → '+point(a.raise):' — '+point(a.end))+' · '+esc(a.category==='all'?'Все категории':categoryName(a.category||'all'))+(a.begin?' · '+esc(a.begin.replace('T',' '))+' МСК':'')+(!active(a)?' · Срок истёк':'')+'</small></div><div><button type="button" data-edit="'+esc(a.id)+'">Править</button><button type="button" data-del="'+esc(a.id)+'">Удалить</button></div></div>').join(''):'<p class="userSpeedEmpty">Пока ничего не загружено. Поле скоростей на профиле пустое.</p>';
+ el.innerHTML=selection.length?selection.map(a=>'<div class="userSpeedItem"><div><b>'+esc(a.type==='tp'?'ТП · 3 точки':a.speed+' км/ч')+'</b> · '+esc(a.type==='permanent'?'Постоянная':a.type==='temporary'?'Временная':'Токоприёмник')+'<small>'+esc(point(a.start))+(a.type==='tp'?' → '+point(a.lower)+' → '+point(a.raise):' — '+point(a.end))+' · '+esc(a.category==='all'?'Все категории':categoryName(a.category||'all'))+(a.begin?' · '+esc(a.begin.replace('T',' '))+' МСК':'')+(a.type==='permanent'?'':' · '+statusLabel(a))+'</small></div><div><button type="button" data-edit="'+esc(a.id)+'">Править</button><button type="button" data-del="'+esc(a.id)+'">Удалить</button></div></div>').join(''):'<p class="userSpeedEmpty">Пока ничего не загружено. Поле скоростей на профиле пустое.</p>';
  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту запись?')){records=records.filter(a=>a.id!==b.dataset.del);persist()}});
  el.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.edit));
 }
@@ -34,7 +37,7 @@ function init(){
  <div class="userSpeedGrid"><label>Начало · км<input name="km1" type="number" min="5000" max="9000" required></label><label>ПК<input name="pk1" type="number" min="1" max="10" required></label></div>
  <div id="userEndFields"><div class="userSpeedGrid"><label>Конец · км<input name="km2" type="number" min="5000" max="9000"></label><label>ПК<input name="pk2" type="number" min="1" max="10"></label></div></div>
  <div id="userTpFields" hidden><p class="small">1 — приготовиться, 2 — опустить, 3 — поднять. Первая точка выше.</p><label>Опора · приготовиться<input name="pole1" placeholder="Номер опоры"></label><div class="userSpeedGrid"><label>Опустить · км<input name="tpKm2" type="number" min="5000" max="9000"></label><label>ПК<input name="tpPk2" type="number" min="1" max="10"></label></div><label>Опора · опустить<input name="pole2"></label><div class="userSpeedGrid"><label>Поднять · км<input name="km3" type="number" min="5000" max="9000"></label><label>ПК<input name="pk3" type="number" min="1" max="10"></label></div><label>Опора · поднять<input name="pole3"></label></div>
- <div id="userTimeFields" hidden><label>Начало действия МСК<input name="begin" type="datetime-local"></label><label><input type="checkbox" name="untilCancel"> До отмены</label><label id="userEndTime">Конец действия МСК<input name="endTime" type="datetime-local"></label></div>
+ <div id="userTimeFields" hidden><p class="small" id="userMoscowNow">Время на телефоне может отличаться от московского.</p><button type="button" id="userMoscowSet">Поставить текущее время МСК</button><label>Начало действия по МСК (не местное время телефона)<input name="begin" type="datetime-local"></label><label><input type="checkbox" name="untilCancel"> До отмены</label><label id="userEndTime">Конец действия МСК<input name="endTime" type="datetime-local"></label><p class="small">До отмены — запись хранится бессрочно, но не становится действующей раньше указанного начала.</p></div>
  <button type="submit" class="primary">Сохранить запись</button><button type="button" id="userClearForm">Очистить форму</button><p id="userSpeedStatus" role="status"></p></form>
  <div class="row"><button id="userSpeedExport">Резервная копия JSON</button><label class="userImport">Импорт JSON<input type="file" id="userSpeedImport" accept="application/json,.json"></label></div>
  <p class="small">Распознавание фотографий и PDF добавим отдельным этапом. Сейчас работает ручное заполнение и перенос собственных записей в JSON.</p>
@@ -44,7 +47,9 @@ function init(){
  // Keep the two kilometer/PK field pairs unique for form.elements.
 
  const clear=()=>{f.reset();f.elements.uid.value='';toggle()};
- f.elements.kind.onchange=toggle;f.elements.untilCancel.onchange=toggle;$('userClearForm').onclick=clear;
+ f.elements.kind.onchange=()=>{if(f.elements.kind.value!=='permanent'&&!f.elements.begin.value)f.elements.begin.value=nowMoscow();toggle()};f.elements.untilCancel.onchange=toggle;$('userClearForm').onclick=clear;
+ $('userMoscowSet').onclick=()=>{f.elements.begin.value=nowMoscow();$('userSpeedStatus').textContent='Начало выставлено по МСК'};
+ $('userMoscowNow').textContent='Сейчас в Москве: '+nowMoscow().replace('T',' ')+' (UTC+3). Вводите московское, не местное время телефона.';
  f.onsubmit=e=>{e.preventDefault();try{if(!route)throw Error('Сначала выберите путь');const type=f.elements.kind.value,start=metres(f.elements.km1.value,f.elements.pk1.value),end=type==='tp'?metres(f.elements.tpKm2.value,f.elements.tpPk2.value):metres(f.elements.km2.value,f.elements.pk2.value),raise=type==='tp'?metres(f.elements.km3.value,f.elements.pk3.value):null;const speed=type==='tp'?null:Number(f.elements.speed.value);if(type!=='tp'&&!(speed>=1&&speed<=200))throw Error('Неверная скорость');if(type!=='tp'&&start===end)throw Error('Укажите разные границы');if(type==='tp'&&(new Set([start,end,raise]).size!==3))throw Error('Укажите три разные точки');if(type==='tp'&&!((end-start)*route.direction>0&&(raise-end)*route.direction>0))throw Error('Точки ТП должны идти последовательно по выбранному направлению');const begin=f.elements.begin.value,endTime=f.elements.endTime.value,untilCancel=f.elements.untilCancel.checked;if(type!=='permanent'&&!untilCancel&&(!begin||!endTime))throw Error('Укажите начало и конец по МСК либо «До отмены»');if(type!=='permanent'&&untilCancel&&!begin)throw Error('Укажите начало действия МСК');if(type!=='permanent'&&!untilCancel&&begin&&endTime&&stamp(endTime)<stamp(begin))throw Error('Конец раньше начала');const id=f.elements.uid.value||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2));const a={id,routeId:route.id,type,category:f.elements.train.value,start,end:type==='tp'?undefined:end,lower:type==='tp'?end:undefined,raise,speed,pole1:f.elements.pole1.value,pole2:f.elements.pole2.value,pole3:f.elements.pole3.value,begin:type==='permanent'?'':begin,endTime:type==='permanent'?'':(untilCancel?'':endTime),untilCancel:type==='permanent'?false:untilCancel};records=records.filter(x=>x.id!==id);records.push(a);persist();clear();$('userSpeedStatus').textContent='Сохранено офлайн';}catch(err){$('userSpeedStatus').textContent=err.message;}};
  for(const [id,k] of [['userShowPerm','permanent'],['userShowTemp','temporary'],['userShowTp','tp']])$(id).onchange=e=>{shown[k]=e.target.checked;rerender()};
  $('userSpeedCategory').onchange=e=>{category=e.target.value;rerender()};
@@ -57,16 +62,18 @@ function render(el,r,currentRoute,cb){
  route=currentRoute;rerender=cb||(()=>{});init();list();
  const prev=el.querySelector('.userSpeedOverlay');if(prev)prev.remove();
  if(!route)return;
- const items=records.filter(a=>a.routeId===route.id&&shown[a.type]&&(a.category==='all'||a.category===category)&&active(a));
+ const manualPreview=el.id==='driverChart'&&typeof document!=='undefined'&&document.getElementById('driverMode')?.textContent?.includes('Ручной');
+ const items=records.filter(a=>a.routeId===route.id&&shown[a.type]&&(a.category==='all'||a.category===category)&&(active(a)||manualPreview));
  const n=document.createElement('div');n.className='userSpeedOverlay';n.setAttribute('aria-hidden','true');
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 1000 130');svg.setAttribute('preserveAspectRatio','none');n.append(svg);
  const NS='http://www.w3.org/2000/svg',make=(tag,attrs,str)=>{const node=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,v);if(str!=null)node.textContent=str;svg.append(node)};
  const x=m=>(m-r.start)/route.direction/r.span*1000,y=s=>114-Math.min(120,Math.max(0,s))*0.82;
  for(const a of items){
- if(a.type==='tp'){for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){const cx=x(m);if(cx<0||cx>1000)continue;make('circle',{cx,cy:120,r:9,fill:color});make('text',{x:cx,y:124,'text-anchor':'middle','font-size':12,'font-weight':800,fill:'#081321'},t)}continue}
- const x1=x(a.start),x2=x(a.end),left=Math.max(0,Math.min(x1,x2)),right=Math.min(1000,Math.max(x1,x2));if(right<=left)continue;const sy=y(a.speed),color=a.type==='permanent'?'#f1f5f9':'#fb7185';
- make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':3});for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:126,stroke:color,'stroke-width':1,'stroke-opacity':.42});
+ if(a.type==='tp'){for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){const cx=x(m);if(cx<0||cx>1000)continue;make('circle',{cx,cy:120,r:9,fill:active(a)?color:'#8493a3','fill-opacity':active(a)?1:.65});make('text',{x:cx,y:124,'text-anchor':'middle','font-size':12,'font-weight':800,fill:'#081321'},t)}continue}
+ const x1=x(a.start),x2=x(a.end),left=Math.max(0,Math.min(x1,x2)),right=Math.min(1000,Math.max(x1,x2));if(right<=left)continue;const sy=y(a.speed),isActive=active(a),color=!isActive?'#94a3b8':a.type==='permanent'?'#f1f5f9':'#fb7185';
+ make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':3,...(!isActive?{'stroke-dasharray':'8 6'}:{})});for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:126,stroke:color,'stroke-width':1,'stroke-opacity':.42});
  make('text',{x:(left+right)/2,y:Math.max(12,sy-6),'text-anchor':'middle','font-size':16,'font-weight':800,fill:color},String(a.speed));
+ if(!isActive)make('text',{x:(left+right)/2,y:Math.min(125,sy+17),'text-anchor':'middle','font-size':11,fill:'#cbd5e1'},status(a)==='upcoming'?'ПОЗЖЕ':'ИСТЕКЛО');
  }
  el.append(n);
 }
