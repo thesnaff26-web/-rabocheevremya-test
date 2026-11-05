@@ -107,7 +107,7 @@
   function range(c,s){let start=c-route.direction*s*.18;const maxStart=route.direction===1?route.end-s:route.start+s;
    start=route.direction===1?Math.max(route.start,Math.min(maxStart,start)):Math.min(route.end,Math.max(maxStart,start));return {start,end:start+route.direction*s,span:s};}
   function chart(el,r,detail=false){
-   if(state?.mode==='gps'&&!state.valid&&!state.overviewOnly){el.replaceChildren();delete el.dataset.profileSignature;return}
+   if(state?.mode==='gps'&&!state.valid&&!state.overviewOnly){el.replaceChildren();delete el.dataset.profileSignature;if(el.id==='driverChart'){const d=document.getElementById('userSpeedDistance');if(d)d.textContent='Расстояние до предупреждения: км/ПК по GPS пока не подтверждён';}return}
    const width=el.clientWidth;if(!width)return;
    const height=el.clientHeight,alignment=landmarkLayout(entries,route.direction);
    const signature=[route.id,r.span,width,height,detail,...entries.map(e=>e.page.file)].join('|');
