@@ -23,6 +23,28 @@ function list(){
 }
 function edit(id){const a=records.find(x=>x.id===id);if(!a)return;const f=$('userSpeedForm');f.elements.uid.value=a.id;f.elements.kind.value=a.type;f.elements.train.value=a.category||'all';f.elements.speed.value=a.speed??'';f.elements.km1.value=Math.floor(a.start/1000);f.elements.pk1.value=Math.floor(a.start%1000/100)+1;f.elements.km2.value=a.end!=null?Math.floor(a.end/1000):'';f.elements.pk2.value=a.end!=null?Math.floor(a.end%1000/100)+1:'';f.elements.tpKm2.value=Math.floor((a.lower??a.end)/1000);f.elements.tpPk2.value=Math.floor((a.lower??a.end)%1000/100)+1;f.elements.km3.value=Math.floor((a.raise??a.end??a.start)/1000);f.elements.pk3.value=Math.floor((a.raise??a.end??a.start)%1000/100)+1;f.elements.pole1.value=a.pole1||'';f.elements.pole2.value=a.pole2||'';f.elements.pole3.value=a.pole3||'';f.elements.begin.value=a.begin||'';f.elements.endTime.value=a.endTime||'';f.elements.untilCancel.checked=!!a.untilCancel;toggle();syncTimeButtons();$('userSpeedManager').open=true;f.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function toggle(){const f=$('userSpeedForm'),tp=f.elements.kind.value==='tp',perm=f.elements.kind.value==='permanent';$('userTpFields').hidden=!tp;$('userEndFields').hidden=tp;$('userSpeedFields').hidden=tp;$('userTimeFields').hidden=perm;$('userEndTime').hidden=f.elements.untilCancel.checked;f.elements.speed.disabled=tp;f.elements.km2.disabled=tp;f.elements.pk2.disabled=tp;f.elements.tpKm2.disabled=!tp;f.elements.tpPk2.disabled=!tp;f.elements.km3.disabled=!tp;f.elements.pk3.disabled=!tp;}
+
+function syncTimeButtons(){const f=$('userSpeedForm');if(!f)return;for(const key of ['begin','endTime']){const b=document.querySelector('#userSpeedForm [data-time="'+key+'"]');if(b)b.textContent=f.elements[key].value?f.elements[key].value.replace('T',' · ')+' МСК':'Выбрать дату и время';}}
+function initTimePicker(){
+ const f=$('userSpeedForm'),overlay=$('userTimeOverlay'),pad=n=>String(n).padStart(2,'0');
+ let key=null;const wheels=Object.fromEntries(['Day','Month','Year','Hour','Minute'].map(k=>[k,$('userWheel'+k)]));
+ const fill=(s)=>{const v=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s||'')?s:nowMoscow();
+ const [d,t]=v.split('T'),[y,mo,day]=d.split('-').map(Number),[h,mi]=t.split(':').map(Number);
+ const set=(node,values,value)=>{node.replaceChildren(...values.map(n=>{const o=document.createElement('option');o.value=String(n);o.textContent=pad(n);return o}));node.value=String(value)};
+ set(wheels.Year,Array.from({length:21},(_,i)=>y-10+i),y);set(wheels.Month,Array.from({length:12},(_,i)=>i+1),mo);
+ set(wheels.Day,Array.from({length:new Date(y,mo,0).getDate()},(_,i)=>i+1),day);
+ set(wheels.Hour,Array.from({length:24},(_,i)=>i),h);set(wheels.Minute,Array.from({length:60},(_,i)=>i),mi);
+ };
+ const fixDay=()=>{const day=Number(wheels.Day.value)||1,days=new Date(+wheels.Year.value,+wheels.Month.value,0).getDate();wheels.Day.replaceChildren(...Array.from({length:days},(_,i)=>{const o=document.createElement('option');o.value=String(i+1);o.textContent=pad(i+1);return o}));wheels.Day.value=String(Math.min(day,days))};
+ wheels.Year.onchange=fixDay;wheels.Month.onchange=fixDay;
+ const close=()=>{overlay.hidden=true;key=null};
+ document.querySelectorAll('#userSpeedForm [data-time]').forEach(b=>b.onclick=()=>{key=b.dataset.time;fill(f.elements[key].value);overlay.hidden=false});
+ $('userTimeCancel').onclick=close;
+ $('userTimeDone').onclick=()=>{if(key){f.elements[key].value=wheels.Year.value+'-'+pad(wheels.Month.value)+'-'+pad(wheels.Day.value)+'T'+pad(wheels.Hour.value)+':'+pad(wheels.Minute.value);syncTimeButtons()}close()};
+ $('userTimeClear').onclick=()=>{if(key){f.elements[key].value='';syncTimeButtons()}close()};
+ $('userTimeNow').onclick=()=>fill(nowMoscow());
+ overlay.onclick=e=>{if(e.target===overlay)close()};
+}
 function init(){
  const panel=$('driverPanel');if(!panel||$('userSpeedManager'))return;
  const wrap=document.createElement('details');wrap.className='card';wrap.id='userSpeedManager';wrap.innerHTML=`<summary>Скорости и предупреждения · мои данные</summary>
@@ -37,7 +59,15 @@ function init(){
  <div class="userSpeedGrid"><label>Начало · км<input name="km1" type="number" min="5000" max="9000" required></label><label>ПК<input name="pk1" type="number" min="1" max="10" required></label></div>
  <div id="userEndFields"><p class="small">Конец необязателен. Без него на карте будет только точечная отметка, не участок ограничения.</p><div class="userSpeedGrid"><label>Конец · км<input name="km2" type="number" min="5000" max="9000"></label><label>ПК<input name="pk2" type="number" min="1" max="10"></label></div></div>
  <div id="userTpFields" hidden><p class="small">1 — приготовиться, 2 — опустить, 3 — поднять. Первая точка выше.</p><label>Опора · приготовиться<input name="pole1" placeholder="Номер опоры"></label><div class="userSpeedGrid"><label>Опустить · км<input name="tpKm2" type="number" min="5000" max="9000"></label><label>ПК<input name="tpPk2" type="number" min="1" max="10"></label></div><label>Опора · опустить<input name="pole2"></label><div class="userSpeedGrid"><label>Поднять · км<input name="km3" type="number" min="5000" max="9000"></label><label>ПК<input name="pk3" type="number" min="1" max="10"></label></div><label>Опора · поднять<input name="pole3"></label></div>
- <div id="userTimeFields" hidden><p class="small" id="userMoscowNow">Время на телефоне может отличаться от московского.</p><button type="button" id="userMoscowSet">Поставить текущее время МСК</button><label>Начало действия по МСК (не местное время телефона)<input name="begin" type="datetime-local"></label><label><input type="checkbox" name="untilCancel"> До отмены</label><label id="userEndTime">Конец действия МСК<input name="endTime" type="datetime-local"></label><p class="small">До отмены — запись хранится бессрочно, но не становится действующей раньше указанного начала.</p></div>
+ <div id="userTimeFields" hidden><p class="small" id="userMoscowNow">Время по Москве (UTC+3).</p><button type="button" id="userMoscowSet">Сейчас по МСК</button>
+ <label>Начало действия · МСК (необязательно)<input name="begin" type="hidden"><button type="button" class="userTimePick" data-time="begin">Выбрать дату и время</button></label>
+ <label><input type="checkbox" name="untilCancel"> До отмены</label>
+ <label id="userEndTime">Конец действия · МСК (необязательно)<input name="endTime" type="hidden"><button type="button" class="userTimePick" data-time="endTime">Выбрать дату и время</button></label>
+ <p class="small">Если срок неизвестен, запись сохраняется как непроверенная и не считается действующей.</p></div>
+ <div class="userTimeOverlay" id="userTimeOverlay" hidden><div class="userTimeSheet">
+ <div class="userTimeHead"><button type="button" id="userTimeCancel">Отмена</button><b>Дата и время · МСК</b><button type="button" id="userTimeDone">Готово</button></div>
+ <div class="userTimeWheels"><label>День<select id="userWheelDay"></select></label><label>Месяц<select id="userWheelMonth"></select></label><label>Год<select id="userWheelYear"></select></label><label>Час<select id="userWheelHour"></select></label><label>Мин<select id="userWheelMinute"></select></label></div>
+ <div class="userTimeFoot"><button type="button" id="userTimeNow">Сейчас МСК</button><button type="button" id="userTimeClear">Без времени</button></div></div></div>
  <button type="submit" class="primary">Сохранить запись</button><button type="button" id="userClearForm">Очистить форму</button><p id="userSpeedStatus" role="status"></p></form>
  <div class="row"><button id="userSpeedExport">Резервная копия JSON</button><label class="userImport">Импорт JSON<input type="file" id="userSpeedImport" accept="application/json,.json"></label></div>
  <p class="small">Распознавание фотографий и PDF добавим отдельным этапом. Сейчас работает ручное заполнение и перенос собственных записей в JSON.</p>
@@ -48,7 +78,7 @@ function init(){
 
  const clear=()=>{f.reset();f.elements.uid.value='';toggle();syncTimeButtons()};
  f.elements.kind.onchange=()=>{toggle()};f.elements.untilCancel.onchange=toggle;$('userClearForm').onclick=clear;
- $('userMoscowSet').onclick=()=>{f.elements.begin.value=nowMoscow();$('userSpeedStatus').textContent='Начало выставлено по МСК'};
+ $('userMoscowSet').onclick=()=>{f.elements.begin.value=nowMoscow();syncTimeButtons();$('userSpeedStatus').textContent='Начало выставлено по МСК'};
  $('userMoscowNow').textContent='Сейчас в Москве: '+nowMoscow().replace('T',' ')+' (UTC+3). Вводите московское, не местное время телефона.';
  f.onsubmit=e=>{e.preventDefault();try{if(!route)throw Error('Сначала выберите путь');const type=f.elements.kind.value,start=metres(f.elements.km1.value,f.elements.pk1.value),end=type==='tp'?metres(f.elements.tpKm2.value,f.elements.tpPk2.value):(f.elements.km2.value!==''&&f.elements.pk2.value!==''?metres(f.elements.km2.value,f.elements.pk2.value):null),raise=type==='tp'?metres(f.elements.km3.value,f.elements.pk3.value):null;if(type!=='tp'&&(f.elements.km2.value!==''||f.elements.pk2.value!=='')&&end===null)throw Error('Заполните обе границы конца или оставьте их пустыми');const speed=type==='tp'?null:Number(f.elements.speed.value);if(type!=='tp'&&!(speed>=1&&speed<=200))throw Error('Неверная скорость');if(type!=='tp'&&end!==null&&start===end)throw Error('Укажите разные границы');if(type==='tp'&&(new Set([start,end,raise]).size!==3))throw Error('Укажите три разные точки');if(type==='tp'&&!((end-start)*route.direction>0&&(raise-end)*route.direction>0))throw Error('Точки ТП должны идти последовательно по выбранному направлению');const begin=f.elements.begin.value,endTime=f.elements.endTime.value,untilCancel=f.elements.untilCancel.checked;if(type!=='permanent'&&endTime&&!begin)throw Error('Для времени окончания укажите начало действия МСК');if(type!=='permanent'&&!untilCancel&&begin&&endTime&&stamp(endTime)<stamp(begin))throw Error('Конец раньше начала');const id=f.elements.uid.value||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2));const a={id,routeId:route.id,type,category:f.elements.train.value,start,end:type==='tp'?undefined:end,lower:type==='tp'?end:undefined,raise,speed,pole1:f.elements.pole1.value,pole2:f.elements.pole2.value,pole3:f.elements.pole3.value,begin:type==='permanent'?'':begin,endTime:type==='permanent'?'':(untilCancel?'':endTime),untilCancel:type==='permanent'?false:untilCancel};records=records.filter(x=>x.id!==id);records.push(a);persist();clear();$('userSpeedStatus').textContent='Сохранено офлайн';}catch(err){$('userSpeedStatus').textContent=err.message;}};
  for(const [id,k] of [['userShowPerm','permanent'],['userShowTemp','temporary'],['userShowTp','tp']])$(id).onchange=e=>{shown[k]=e.target.checked;rerender()};
