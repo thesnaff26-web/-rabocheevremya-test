@@ -113,9 +113,9 @@
    const signature=[route.id,r.span,width,height,detail,...entries.map(e=>e.page.file)].join('|');
    const reuse=el.dataset.profileSignature===signature;
    if(!reuse){el.replaceChildren();el.dataset.profileSignature=signature;el.profileTiles=[]}
-   const bands=[['speed','ОГРАНИЧЕНИЯ ПО РЕЖИМКЕ',40,90,.21],['landmarks','',180,null,.33],['grade','',null,null,.30]];
+   const bands=[['speed','СКОРОСТИ ПОЛЬЗОВАТЕЛЯ',40,90,.21],['landmarks','',180,null,.33],['grade','',null,null,.30]];
    if(!reuse)for(const [kind,label,y0,h0,ratio] of bands){if(detail&&kind==='landmarks')continue;const band=document.createElement('div');band.className='driverBand '+kind;const title=document.createElement('span');title.className='driverBandLabel';title.textContent=label;if(label)band.append(title);el.append(band);
-    for(const entry of entries){const p=entry.page,g=entry.geo,lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));if(hi<=lo)continue;
+    for(const entry of (kind==='speed'?[]:entries)){const p=entry.page,g=entry.geo,lo=Math.max(p.start,Math.min(r.start,r.end)),hi=Math.min(p.end,Math.max(r.start,r.end));if(hi<=lo)continue;
      const x0=(lo-r.start)/route.direction/r.span*width,x1=(hi-r.start)/route.direction/r.span*width;
      const left=Math.min(x0,x1),w=Math.abs(x1-x0),block=document.createElement('div');block.style.cssText=`position:absolute;left:${left}px;width:${w}px;top:0;bottom:0;overflow:hidden`;
      const sx=width/(Math.abs(g.a)*r.span),y=kind==='grade'?g.gradeTop:kind==='speed'?g.speedTop:(y0||0),h=kind==='grade'?p.profileBox[1]+p.profileBox[3]-g.gradeTop:(h0||Math.max(100,g.gradeTop-180));
@@ -140,6 +140,7 @@
    for(let m=Math.ceil(lo/step)*step;m<=hi;m+=step){const x=(m-r.start)/route.direction/r.span*100;if(x<3||x>97)continue;const tick=document.createElement('div');tick.className='driverTick';tick.style.left=x+'%';const label=document.createElement('span');label.textContent=number(m);tick.append(label);axis.append(tick)}el.append(axis);
    if(state.valid){const x=(state.chain-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const marker=document.createElement('div');marker.className='driverMarker';marker.style.left=x+'%';el.append(marker)}}
    if(selection!==null&&!detail){const x=(selection-r.start)/route.direction/r.span*100;if(x>=0&&x<=100){const mark=document.createElement('div');mark.className='driverSelection';mark.style.left=x+'%';el.append(mark)}}
+   if(root.UserSpeeds)root.UserSpeeds.render(el,r,route,render);
   }
   function render(){
    if(destroyed||!route)return;if(state.mode==='gps'&&!state.valid&&!state.overviewOnly){const el=$('driverChart');el.replaceChildren();delete el.dataset.profileSignature;el.profileTiles=null;$('driverRange').textContent='—';$('driverMessage').textContent='Ожидаем GPS для выбора участка.';$('driverDetail').hidden=true;return}const r=range(center,span);$('driverRange').textContent=number(r.start)+' — '+number(r.end)+' км';
