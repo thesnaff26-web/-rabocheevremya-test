@@ -278,6 +278,109 @@ async function pdfText(file){
  if(!text.trim())throw Error('Не удалось извлечь текст из PDF. Попробуйте фотографию страницы.');
  return {text,drafts:[],unresolved:[]};
 }
+
+/* DU-61 has separate location, Moscow time and speed columns. Never treat a
+   full-page OCR sentence as a temporary speed warning. All OCR is unverified. */
+function du61Rows(result,offset=0){
+ const lines=result?.data?.lines||[];
+ if(lines.length)return lines.map(l=>({text:String(l.text||'').trim(),y:offset+((l.bbox?.y0??0)+(l.bbox?.y1??0))/2}))
+  .filter(x=>x.text);
+ const words=result?.data?.words||[];
+ const grouped=[];
+ for(const w of words){
+  const y=offset+((w.bbox?.y0??0)+(w.bbox?.y1??0))/2;
+  let row=grouped.find(r=>Math.abs(r.y-y)<13);
+  if(!row){row={y,words:[]};grouped.push(row)}
+  row.words.push({x:w.bbox?.x0||0,text:w.text||''});
+ }
+ return grouped.map(x=>({y:x.y,text:x.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(' ')})).filter(x=>x.text);
+}
+function du61Location(text){
+ const s=String(text||'').replace(/[—–−]/g,'-').replace(/[|:]/g,' ').replace(/\s+/g,' ').trim();
+ // DU-61 often uses "6988пк9", "6907пк1-6906пк7" and
+ // "6999пк6-6998пк10". Require an explicit numeric km/PK.
+ const m=s.match(/(\d{4})\s*пк\s*(10|[1-9])(?:\s*-\s*(?:(\d{4})\s*пк\s*)?(10|[1-9]))?/i);
+ if(!m)return null;
+ const km1=Number(m[1]),pk1=Number(m[2]);
+ const km2=m[4]?(m[3]?Number(m[3]):km1):'';
+ const pk2=m[4]?Number(m[4]):'';
+ if(km1<5000||km1>9000||(km2!==''&&(km2<5000||km2>9000)))return null;
+ return {km1,pk1,km2,pk2};
+}
+function du61DraftFromColumns(speedRows,locationRows,timeRows){
+ const drafts=[],unresolved=[];
+ const sortedLocations=locationRows.map(row=>({...row,position:du61Location(row.text)}))
+  .filter(row=>row.position).sort((a,b)=>a.y-b.y);
+ // Compare rows using y coordinates within the same scaled document crop.
+ for(const sr of speedRows){
+  const token=sr.text.replace(/[OoОо]/g,'0').replace(/[ІI|]/g,'1').replace(/\s/g,'');
+  const found=token.match(/^(?:[1-9]\d?|1[0-4]\d|150)$/);
+  if(!found)continue;
+  const speed=Number(found[0]);if(speed<5||speed>150)continue;
+  const closest=sortedLocations
+   .map(row=>({...row,delta:Math.abs(sr.y-row.y)}))
+   .sort((a,b)=>a.delta-b.delta)[0];
+  // Rows farther than 32px in the scaled 1600px document are ambiguous.
+  if(!closest||closest.delta>32){
+   unresolved.push('ДУ-61: скорость '+speed+' км/ч, точные км/ПК не сопоставлены со строкой');
+   continue;
+  }
+  const atTime=timeRows.map(row=>({...row,delta:Math.abs(sr.y-row.y)})).sort((a,b)=>a.delta-b.delta)[0];
+  const timeHint=atTime&&atTime.delta<32?atTime.text:'не распознано';
+  drafts.push({...closest.position,speed,category:'all',begin:'',endTime:'',untilCancel:false,
+   source:'ДУ-61 · '+closest.text+' | '+speed+' км/ч · время по документу: '+timeHint+' [проверить МСК]',
+   stationHint:closest.position.km2===''?'ДУ-61: конец ограничения не указан':'',
+   ocrUnverified:true});
+ }
+ return {drafts,unresolved};
+}
+async function du61Photo(file){
+ const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
+ const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Читаю ДУ-61: '+Math.round((m.progress||0)*100)+'%')}});
+ let bitmap=null;
+ try{
+  if(typeof createImageBitmap==='function')try{bitmap=await createImageBitmap(file)}catch(_){}
+  if(!bitmap){
+   const url=URL.createObjectURL(file);
+   try{bitmap=await new Promise((ok,bad)=>{const img=new Image();img.onload=()=>ok(img);img.onerror=()=>bad(Error('Фото ДУ-61 не открылось'));img.src=url})}
+   finally{URL.revokeObjectURL(url)}
+  }
+  const canvas=document.createElement('canvas');
+  const ratio=Math.min(2,1700/Math.max(bitmap.width,bitmap.height));
+  canvas.width=Math.round(bitmap.width*ratio);canvas.height=Math.round(bitmap.height*ratio);
+  const context=canvas.getContext('2d',{willReadFrequently:true});
+  context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+  const regions=[
+   {title:'место действия',x:.105,y:.31,w:.27,h:.57},
+   {title:'время МСК',x:.375,y:.31,w:.125,h:.57},
+   {title:'скорость',x:.50,y:.31,w:.08,h:.57}
+  ];
+  let text='',parts=[];
+  for(let i=0;i<regions.length;i++){
+   const reg=regions[i],sx=Math.floor(canvas.width*reg.x),sy=Math.floor(canvas.height*reg.y);
+   const sw=Math.round(canvas.width*reg.w),sh=Math.round(canvas.height*reg.h);
+   const crop=document.createElement('canvas');crop.width=sw*2;crop.height=sh*2;
+   const cc=crop.getContext('2d',{willReadFrequently:true});cc.drawImage(canvas,sx,sy,sw,sh,0,0,crop.width,crop.height);
+   const pixels=cc.getImageData(0,0,crop.width,crop.height);
+   for(let p=0;p<pixels.data.length;p+=4){
+    const v=.299*pixels.data[p]+.587*pixels.data[p+1]+.114*pixels.data[p+2];
+    const clean=v<155?Math.max(0,(v-60)*.8):Math.min(255,v*1.1+8);
+    pixels.data[p]=pixels.data[p+1]=pixels.data[p+2]=clean;
+   }
+   cc.putImageData(pixels,0,0);
+   status('ДУ-61: распознаю колонку '+reg.title+' ('+(i+1)+'/3)');
+   if(i===2)await worker.setParameters({tessedit_char_whitelist:'0123456789'});
+   const scan=await withTimeout(worker.recognize(crop),60000,'Распознавание '+reg.title);
+   text+='\n--- '+reg.title+' ---\n'+(scan.data.text||'')+'\n';
+   parts.push(du61Rows(scan,sy*2));
+   crop.width=0;crop.height=0;
+  }
+  canvas.width=0;canvas.height=0;
+  const outcome=du61DraftFromColumns(parts[2],parts[0],parts[1]);
+  if(!outcome.drafts.length)outcome.unresolved.push('Не удалось надёжно сопоставить три колонки ДУ-61. Сфотографируйте ровно и ближе, чтобы таблица заняла большую часть кадра.');
+  return {text,drafts:outcome.drafts,unresolved:outcome.unresolved};
+ }finally{if(bitmap?.close)bitmap.close();await worker.terminate()}
+}
 async function imageText(file){
  const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознаю фото: '+Math.round((m.progress||0)*100)+'%')}});
@@ -594,7 +697,7 @@ async function handleFile(file){
  if(!isPdf&&!isImage)return status('Поддерживаются фотографии и PDF.',true);
  status('Подготавливаю '+file.name+'…');
  try{
-  const result=isPdf?await pdfText(file):ctx.tab==='permanent'?await readSpeedPhoto(file):{text:await imageText(file),drafts:[],unresolved:[]};
+  const result=isPdf?await pdfText(file):ctx.tab==='permanent'?await readSpeedPhoto(file):await du61Photo(file);
   $('speedImportText').value=result.text;
   if(result.drafts.length){
    candidates=result.drafts;showDrafts();
@@ -654,5 +757,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];reviewTab='ready';showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;refreshReviewTabs();showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
+root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport,du61Location,du61DraftFromColumns};
 })(typeof globalThis!=='undefined'?globalThis:this);
