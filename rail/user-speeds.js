@@ -2,7 +2,7 @@
 'use strict';
 // User-managed, offline-only rail speed annotations. No operational values are inferred.
 const KEY='rail-user-speeds-v1', $=id=>document.getElementById(id);
-let records=[],route=null,category='freight',selectedTab='permanent',shown={permanent:true,temporary:true,tp:true},rerender=()=>{};
+let records=[],route=null,category='freight',selectedTab='permanent',shown={permanent:true,temporary:true,tp:true},lastPosition=null,rerender=()=>{};
 try { const a=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(a))records=a.filter(valid); } catch(e){console.warn('Скорости: база недоступна',e);}
 function valid(a){return a&&typeof a.id==='string'&&typeof a.routeId==='string'&&['permanent','temporary','tp'].includes(a.type)&&Number.isFinite(a.start)&&(a.type==='tp'?(Number.isFinite(a.lower)&&Number.isFinite(a.raise)):((a.end==null||Number.isFinite(a.end))&&Number.isFinite(a.speed)&&a.speed>0));}
 function persist(){localStorage.setItem(KEY,JSON.stringify(records));rerender();list();}
@@ -23,10 +23,29 @@ function setTab(type,resetForm=true){
  if(f&&resetForm){f.reset();f.elements.uid.value='';f.elements.kind.value=type;toggle();syncTimeButtons();}
  list();
 }
+function sortingInfo(a){
+ const direction=route&&route.direction===-1?-1:1;
+ const orderedStart=a.start*direction;
+ const gpsValid=lastPosition&&lastPosition.mode==='gps'&&lastPosition.valid&&Number.isFinite(lastPosition.chain);
+ if(!gpsValid)return {rank:0,dist:orderedStart,second:orderedStart};
+ const here=lastPosition.chain*direction;
+ const start=a.start*direction;
+ // An interval that contains our location comes before any approaching interval.
+ const finish=(a.type==='tp'?a.raise:a.end);
+ const min=finish==null?start:Math.min(start,finish*direction);
+ const max=finish==null?start:Math.max(start,finish*direction);
+ if(min<=here&&max>=here)return {rank:0,dist:0,second:start};
+ if(min>here)return {rank:1,dist:min-here,second:start};
+ // Passed records remain listed, after all upcoming records.
+ return {rank:2,dist:here-max,second:-max};
+}
 function list(){
  const el=$('userSpeedList');if(!el)return;
  const sameRoute=records.filter(a=>!route||a.routeId===route.id);
- const selection=sameRoute.filter(a=>a.type===selectedTab);
+ const selection=sameRoute.filter(a=>a.type===selectedTab).sort((a,b)=>{
+  const x=sortingInfo(a),y=sortingInfo(b);
+  return x.rank-y.rank||x.dist-y.dist||x.second-y.second||a.id.localeCompare(b.id);
+ });
  const names={permanent:'Постоянные скорости',temporary:'Временные предупреждения',tp:'Опускание ТП'};
  const counters={permanent:0,temporary:0,tp:0};
  for(const record of sameRoute)counters[record.type]=(counters[record.type]||0)+1;
@@ -108,7 +127,7 @@ function init(){
  <form id="userSpeedForm"><h3 id="userSpeedAddTitle">Добавить / изменить: постоянные скорости</h3><input type="hidden" name="uid">
  <input name="kind" type="hidden" value="permanent">
  <label>Категория поезда<select name="train"><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>
- <div id="userSpeedFields"><label>Скорость, км/ч<input name="speed" type="number" min="1" max="200" step="1" required></label></div>
+ <div id="userSpeedFields"><label>Скорость, км/ч<input name="speed" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="3" required></label></div>
  <div class="userSpeedGrid"><label>Начало · км<input name="km1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000" required></label><label>ПК<input name="pk1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10" required></label></div>
  <div id="userEndFields"><p class="small">Конец необязателен. Без него на карте будет только точечная отметка, не участок ограничения.</p><div class="userSpeedGrid"><label>Конец · км<input name="km2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000"></label><label>ПК<input name="pk2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10"></label></div></div>
  <div id="userTpFields" hidden><p class="small">1 — приготовиться, 2 — опустить, 3 — поднять. Первая точка выше.</p><label>Опора · приготовиться<input name="pole1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Номер опоры"></label><div class="userSpeedGrid"><label>Опустить · км<input name="tpKm2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000"></label><label>ПК<input name="tpPk2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10"></label></div><label>Опора · опустить<input name="pole2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6"></label><div class="userSpeedGrid"><label>Поднять · км<input name="km3" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000"></label><label>ПК<input name="pk3" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10"></label></div><label>Опора · поднять<input name="pole3" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6"></label></div>
@@ -130,7 +149,7 @@ function init(){
  // Keep the two kilometer/PK field pairs unique for form.elements.
 
  // Only digits are accepted in km, PK and support-number inputs, including pastes.
- for(const name of ['km1','pk1','km2','pk2','tpKm2','tpPk2','km3','pk3','pole1','pole2','pole3']){
+ for(const name of ['speed','km1','pk1','km2','pk2','tpKm2','tpPk2','km3','pk3','pole1','pole2','pole3']){
   const field=f.elements[name];
   field.addEventListener('input',()=>{const only=field.value.replace(/[^0-9]/g,'');if(field.value!==only)field.value=only.slice(0,field.maxLength>0?field.maxLength:undefined)});
  }
@@ -156,7 +175,7 @@ function distanceInfo(pos){
  div.textContent=next?'До временного ограничения '+next.speed+' км/ч: ≈ '+(next.dist>=1000?(next.dist/1000).toFixed(2)+' км':Math.round(next.dist)+' м')+' (GPS)':'Впереди нет подтверждённых действующих временных ограничений в личной базе';
 }
 function render(el,r,currentRoute,cb,position){
- route=currentRoute;rerender=cb||(()=>{});init();list();
+ route=currentRoute;lastPosition=position||null;rerender=cb||(()=>{});init();list();
  const prev=el.querySelector('.userSpeedOverlay');if(prev)prev.remove();
  if(el.id==='driverChart')distanceInfo(position);
  if(!route)return;
