@@ -119,3 +119,10 @@
 #speedImportPanel .speedImportDisclaimer{padding:8px 10px;border-left:3px solid #7597aa}
 #speedImportPanel small{display:block;overflow-wrap:anywhere;color:#a4bdcb}
 @media(max-width:380px){#speedImportPanel .speedImportNumbers{grid-template-columns:repeat(3,minmax(0,1fr))}#speedImportPanel .speedImportDates{grid-template-columns:1fr}}
+
+/* Explicit profile direction selection replaces parity-only GPS inference. */
+#driverPanel .driverRouteLabel{display:block;margin:10px 0 5px;font-size:12px;color:#a1b5c2}
+#driverPanel #driverRouteSelect{width:100%;min-height:52px;font-size:16px;font-weight:750;padding:11px 13px;border:1px solid #3b596c;border-radius:12px;background:#192b3a;color:#f4f9fb;appearance:auto}
+#driverPanel #driverRouteSelect:focus-visible{outline:3px solid #46d9ad;outline-offset:2px}
+#driverPanel #driverDownload{font-size:14px;line-height:1.3}
+@media(max-width:390px){#driverPanel .driverActions:has(#driverDownload){display:grid;grid-template-columns:1fr 1fr;gap:8px}#driverPanel .driverActions:has(#driverDownload)>button{min-width:0;white-space:normal}}
