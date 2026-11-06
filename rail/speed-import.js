@@ -196,10 +196,49 @@ async function imageText(file){
  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознаю фото: '+Math.round((m.progress||0)*100)+'%')}});
  try{const result=await worker.recognize(file);return result.data.text||''}finally{await worker.terminate()}
 }
+function coverageReport(rows,route){
+ const report={};
+ for(const category of ['passenger','freight','empty']){
+  const applicable=rows.filter(r=>r.category===category||r.category==='all'),intervals=applicable
+   .filter(r=>Number.isFinite(r.end)).map(r=>[Math.max(route.start,Math.min(r.start,r.end)),Math.min(route.end,Math.max(r.start,r.end))])
+   .filter(([a,b])=>b>a).sort((a,b)=>a[0]-b[0]);
+  let cursor=route.start;const gaps=[];
+  for(const [a,b] of intervals){if(a>cursor)gaps.push([cursor,a]);cursor=Math.max(cursor,b)}
+  if(cursor<route.end)gaps.push([cursor,route.end]);
+  report[category]={count:applicable.length,unknown:applicable.filter(r=>!Number.isFinite(r.end)).length,gaps};
+ }
+ return report;
+}
+function showCoverage(){
+ const el=$('speedImportCoverage');if(!el)return;
+ el.hidden=ctx?.tab!=='permanent';if(el.hidden)return;
+ const route=ctx.route();if(!route){el.textContent='Сначала выберите маршрут.';return}
+ const records=[];
+ for(const card of $('speedImportDrafts').querySelectorAll('.speedImportDraft')){
+  if(!card.querySelector('.impSelected')?.checked)continue;
+  const get=n=>card.querySelector('[data-field="'+n+'"]')?.value.trim()||'';
+  if(!/^\d{4}$/.test(get('km1'))||!get('pk1'))continue;
+  const category=get('category');
+  if(!['passenger','freight','empty','all'].includes(category))continue;
+  const start=Number(get('km1'))*1000+(Number(get('pk1'))-1)*100;
+  const end=get('km2')&&get('pk2')?Number(get('km2'))*1000+(Number(get('pk2'))-1)*100:null;
+  records.push({category,start,end});
+ }
+ const audit=coverageReport(records,route),names={passenger:'Пассажирские',freight:'Грузовые',empty:'Порожние'};
+ const point=n=>Math.floor(n/1000)+' км ПК'+(Math.floor(n%1000/100)+1);
+ const lines=['Проверка покрытия выбранного участка (только строки этого импорта):'];
+ for(const [category,name] of Object.entries(names)){
+  const a=audit[category];
+  const examples=a.gaps.slice(0,3).map(([x,y])=>point(x)+' — '+point(y)).join('; ');
+  lines.push(name+': '+a.count+' записей, пробелов: '+a.gaps.length+(a.unknown?', без конечного ПК: '+a.unknown:'')+(examples?' — '+examples:''));
+ }
+ lines.push('Пробел не означает отсутствие ограничений. Ранее сохранённые записи не учтены. Сверьте документ перед сохранением.');
+ el.textContent=lines.join('\n');
+}
 function showDrafts(){
  const list=$('speedImportDrafts');if(!list)return;
  list.replaceChildren();
- if(!candidates.length){list.innerHTML='<p>Скорости не найдены автоматически. Для таблиц PDF используйте оригинальный цифровой файл. Можно исправить распознанный текст или добавить строку вручную.</p>';return}
+ if(!candidates.length){list.innerHTML='<p>Скорости не найдены автоматически. Для таблиц PDF используйте оригинальный цифровой файл. Можно исправить распознанный текст или добавить строку вручную.</p>';showCoverage();return}
  for(let i=0;i<candidates.length;i++){
   const a=candidates[i],card=document.createElement('div');card.className='speedImportDraft';
   card.innerHTML='<label><input type="checkbox" class="impSelected" checked> Строка '+(i+1)+' — проверить</label><div class="speedImportNumbers">'+
@@ -210,6 +249,7 @@ function showDrafts(){
   card.querySelector('[data-field="category"]').value=a.category||'';
   list.append(card);
  }
+ showCoverage();
 }
 function handleText(){candidates=extract($('speedImportText').value);showDrafts();status('Найдено строк: '+candidates.length+'. Проверьте все значения перед сохранением.')}
 function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',category:'',begin:'',endTime:'',source:'ручная корректировка'});showDrafts();status('Заполните новую строку и проверьте исходный документ.')}
@@ -277,7 +317,7 @@ function setup(options){
  '<p class="speedImportDisclaimer">Для первого распознавания нужен интернет (библиотеки загружаются с внешних CDN). Обработка выполняется в браузере, приложение не сохраняет фото/PDF на сервере. Сканированные PDF распознаются максимум по 5 страницам. Результат нужно сверить с документом.</p>'+
  '<label>Распознанный текст (можно исправить)<textarea id="speedImportText" rows="5" placeholder="6904/3-6903/5;40&#10;6903/6-6902/1;60"></textarea></label>'+
  '<div class="speedImportActions"><button type="button" id="speedImportParse">Найти строки</button><button type="button" id="speedImportAddManual">Добавить строку</button></div>'+
- '<p id="speedImportStatus" role="status"></p><div id="speedImportDrafts"></div>'+
+ '<p id="speedImportStatus" role="status"></p><div id="speedImportDrafts"></div><div id="speedImportCoverage" class="speedImportCoverage" role="status" hidden></div>'+
  '<label class="speedImportReview"><input type="checkbox" id="speedImportConfirm"> Я сверил выбранные записи с исходным документом, включая направление, км, ПК, скорости и время МСК.</label>'+
  '<button type="button" id="speedImportSave">Сохранить проверенные записи</button>';
  form.parentNode.insertBefore(wrapper,form);
@@ -286,10 +326,12 @@ function setup(options){
  $('speedImportParse').onclick=handleText;
  $('speedImportAddManual').onclick=addManual;
  $('speedImportSave').onclick=saveDrafts;
+ $('speedImportDrafts').addEventListener('input',showCoverage);
+ $('speedImportDrafts').addEventListener('change',showCoverage);
 }
 function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
- ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;status('Выберите фотографию/PDF или добавьте строку вручную.');
+ ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems};
+root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,coverageReport};
 })(typeof globalThis!=='undefined'?globalThis:this);
