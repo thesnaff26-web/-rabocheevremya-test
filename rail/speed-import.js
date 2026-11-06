@@ -57,7 +57,28 @@ async function pdfText(file){
   for(const item of items){const yy=Math.round(item.transform?.[5]||0);if(y!==null&&Math.abs(yy-y)>3)text+='\n';text+=String(item.str||'')+' ';y=yy}
   text+='\n';
  }
- if(!text.trim())throw Error('PDF не содержит извлекаемого текста. Для сканированного PDF используйте фотографию страницы.');
+ if(!extract(text).length){
+  // Scanned PDF pages have no embedded text. OCR a small number of pages in memory.
+  const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
+  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознаю скан PDF: '+Math.round((m.progress||0)*100)+'%')}});
+  try{
+   let scanned='';
+   for(let i=1;i<=Math.min(doc.numPages,5);i++){
+    status('Распознаю скан PDF: страница '+i+' из '+Math.min(doc.numPages,5));
+    const page=await doc.getPage(i),viewport=page.getViewport({scale:1.75});
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.round(viewport.width);canvas.height=Math.round(viewport.height);
+    const context=canvas.getContext('2d',{willReadFrequently:true});
+    if(!context)throw Error('Не удаётся подготовить PDF для распознавания');
+    await page.render({canvasContext:context,viewport}).promise;
+    const result=await worker.recognize(canvas);scanned+=(result.data.text||'')+'\n';
+    canvas.width=0;canvas.height=0;
+   }
+   // Surface OCR text for verification, regardless of whether rows were found.
+   if(scanned.trim())return scanned;
+  }finally{await worker.terminate()}
+ }
+ if(!text.trim())throw Error('Не удалось извлечь текст из PDF. Попробуйте фотографию страницы.');
  return text;
 }
 async function imageText(file){
@@ -134,7 +155,7 @@ function setup(options){
  const wrapper=document.createElement('section');wrapper.id='speedImportPanel';wrapper.className='speedImportPanel';
  wrapper.innerHTML='<h3>Добавить скорости из фото или PDF</h3><p>Распознавание — черновик. Никакие значения не сохраняются без вашей проверки. Для постоянных и временных скоростей отдельно.</p>'+
  '<div class="speedImportActions"><label class="speedImportButton">Сфотографировать<input type="file" id="speedImportCamera" accept="image/*" capture="environment"></label><label class="speedImportButton">Фото / файл / PDF<input type="file" id="speedImportFile" accept="image/*,.pdf,application/pdf"></label></div>'+
- '<p class="speedImportDisclaimer">Первое распознавание требует интернета для загрузки библиотек. Файлы обрабатываются в браузере; данные распознавания не отправляются в нашу базу. В офлайн-режиме ручное добавление продолжает работать.</p>'+
+ '<p class="speedImportDisclaimer">Для первого распознавания нужен интернет (библиотеки загружаются с внешних CDN). Обработка выполняется в браузере, приложение не сохраняет фото/PDF на сервере. Сканированные PDF распознаются максимум по 5 страницам. Результат нужно сверить с документом.</p>'+
  '<label>Распознанный текст (можно исправить)<textarea id="speedImportText" rows="5" placeholder="6904/3-6903/5;40&#10;6903/6-6902/1;60"></textarea></label>'+
  '<div class="speedImportActions"><button type="button" id="speedImportParse">Найти строки</button><button type="button" id="speedImportAddManual">Добавить строку</button></div>'+
  '<p id="speedImportStatus" role="status"></p><div id="speedImportDrafts"></div>'+
