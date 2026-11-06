@@ -130,17 +130,20 @@ function tableFromPdfItems(items,pageHeight,pageWidth=595){
    // Station speed table may start above y=650 depending on PDF page scale.
    const cells=row.items.filter(it=>side==='left'?it.x/pageWidth<.34:it.x/pageWidth>=.66);
    if(!cells.length)continue;
-   const location=cells.filter(it=>side==='left'?it.x/pageWidth<.185:it.x/pageWidth<.855)
+   const location=cells.filter(it=>side==='left'?it.x/pageWidth<.17:it.x/pageWidth<.855)
     .sort((a,b)=>a.x-b.x).map(it=>it.str).join(' ').trim();
    const range=stationlessRange(location),boundary=stationBoundary(location);
    const slots=side==='left'
-     ?[{category:'passenger',from:.185,to:.230},{category:'freight',from:.230,to:.272},{category:'empty',from:.272,to:.34}]
+     ?[{category:'passenger',from:.17,to:.21},{category:'freight',from:.21,to:.25},{category:'empty',from:.25,to:.31}]
      :[{category:'passenger',from:.855,to:.90},{category:'freight',from:.90,to:.947},{category:'empty',from:.947,to:1.02}];
    const speeds={};
    for(const col of slots){
     const token=cells.filter(it=>it.x/pageWidth>=col.from&&it.x/pageWidth<col.to).map(it=>it.str).join('').trim();
     if(/^\d{1,3}$/.test(token)&&+token>=1&&+token<=200)speeds[col.category]=+token;
    }
+   // The source table uses columns centered at x≈109, 134 and 158 on a 595px PDF.
+   // Previous bounds accidentally classified the second speed as the first and lost
+   // the third column, producing only a handful of entries.
    // Both three-category tables require all three clearly read speeds.
    // Do not accidentally import brake-check or other unrelated tables.
    if(Object.keys(speeds).length!==3)continue;
