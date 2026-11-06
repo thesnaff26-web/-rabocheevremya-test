@@ -151,7 +151,8 @@ function init(){
  <div class="userTimeFoot"><button type="button" id="userTimeClear">Без времени</button></div></div></div>
  <button type="submit" class="primary">Сохранить запись</button><button type="button" id="userClearForm">Очистить форму</button><p id="userSpeedStatus" role="status"></p></form>
  <div class="row"><button id="userSpeedExport">Резервная копия JSON</button><label class="userImport">Импорт JSON<input type="file" id="userSpeedImport" accept="application/json,.json"></label></div>
-  <div class="row"><button id="userResetTemp">Сбросить временные</button><button id="userResetPerm">Сбросить постоянные</button></div>`;
+  <div class="row"><button id="userResetTemp" type="button">Сбросить временные этого участка</button><button id="userResetPerm" type="button">Сбросить постоянные этого участка</button></div>
+ <div class="row"><button id="userResetTp" type="button">Сбросить ТП этого участка</button><button id="userRestoreReset" type="button">Восстановить последний сброс</button></div>`;
  panel.insertAdjacentElement('afterend',wrap);
  const f=$('userSpeedForm');
  // Keep the two kilometer/PK field pairs unique for form.elements.
@@ -172,7 +173,32 @@ function init(){
   input.checked=permanentVisible[input.dataset.permCategory];
   input.onchange=()=>{permanentVisible[input.dataset.permCategory]=input.checked;try{localStorage.setItem(VIS_KEY,JSON.stringify(permanentVisible))}catch(_){}rerender()};
  }
- for(const [id,k] of [['userResetPerm','permanent'],['userResetTemp','temporary']])$(id).onclick=()=>{if(confirm('Удалить все '+(k==='permanent'?'постоянные скорости':'временные предупреждения')+' на этом устройстве?')){records=records.filter(a=>k==='permanent'?a.type!=='permanent':a.type==='permanent');persist()}};
+ const RESET_BACKUP_KEY='rail-user-speeds-last-reset-v1';
+ const resetLabel={permanent:'постоянные скорости',temporary:'временные предупреждения',tp:'опускания ТП'};
+ for(const [id,kind] of [['userResetPerm','permanent'],['userResetTemp','temporary'],['userResetTp','tp']])$(id).onclick=()=>{
+  if(!route?.id){alert('Сначала выберите участок');return}
+  const currentRouteId=route.id;
+  const affected=records.filter(a=>a.routeId===currentRouteId&&a.type===kind);
+  if(!affected.length){alert('В этом разделе выбранного участка нет записей для сброса');return}
+  if(!confirm('Удалить '+affected.length+' записей: '+resetLabel[kind]+' — только участок «'+route.name+'»? Другие участки и типы сохранятся.'))return;
+  // Save full state BEFORE deletion, allowing recovery of the most recent reset.
+  try{localStorage.setItem(RESET_BACKUP_KEY,JSON.stringify({routeId:currentRouteId,kind,at:Date.now(),records:affected}))}
+  catch(_){alert('Не удалось сохранить копию перед удалением. Сброс отменён.');return}
+  records=records.filter(a=>!(a.routeId===currentRouteId&&a.type===kind));
+  persist();
+ };
+ $('userRestoreReset').onclick=()=>{
+  let backup=null;
+  try{backup=JSON.parse(localStorage.getItem(RESET_BACKUP_KEY)||'null')}catch(_){}
+  if(!backup||!Array.isArray(backup.records)||!backup.records.length){alert('Копии последнего сброса пока нет');return}
+  const validRows=backup.records.filter(valid);
+  if(!validRows.length){alert('Копия повреждена');return}
+  if(!confirm('Восстановить '+validRows.length+' записей из последнего сброса? Уже существующие записи не будут заменены.'))return;
+  const existing=new Set(records.map(a=>a.id));
+  let added=0;
+  for(const entry of validRows){if(!existing.has(entry.id)){records.push(entry);existing.add(entry.id);added++}}
+  persist();alert('Восстановлено '+added+' записей.');
+ };
  $('userSpeedExport').onclick=()=>{const blob=new Blob([JSON.stringify({format:'rail-user-speeds-v1',records},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='rail-speeds-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
  $('userSpeedImport').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;const data=JSON.parse(await file.text());if(data.format!=='rail-user-speeds-v1'||!Array.isArray(data.records)||!data.records.every(valid))throw Error('Неподдерживаемая резервная копия');if(!confirm('Добавить '+data.records.length+' записей из копии? Существующие не будут удалены.'))return;const known=new Set(records.map(x=>x.id));records.push(...data.records.filter(x=>!known.has(x.id)));persist();}catch(err){alert('Ошибка импорта: '+err.message)}finally{e.target.value=''}};
  toggle();initTimePicker();syncTimeButtons();list();
