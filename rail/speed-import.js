@@ -225,6 +225,71 @@ async function imageText(file){
  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознаю фото: '+Math.round((m.progress||0)*100)+'%')}});
  try{const result=await worker.recognize(file);return result.data.text||''}finally{await worker.terminate()}
 }
+function imageBounds(ctx,w,h){
+ // Find colored table cells rather than treating large white photo margins
+ // or the iPhone screenshot status bar as part of the railway table.
+ const pixels=ctx.getImageData(0,0,w,h).data;
+ let left=w,right=0,top=h,bottom=0,count=0;
+ const step=Math.max(3,Math.round(Math.max(w,h)/550));
+ for(let y=0;y<h;y+=step)for(let x=0;x<w;x+=step){
+  const p=(y*w+x)*4,r=pixels[p],g=pixels[p+1],b=pixels[p+2];
+  const high=Math.max(r,g,b),low=Math.min(r,g,b);
+  if(high<245&&high>105&&high-low>40&&low>40){
+   left=Math.min(left,x);right=Math.max(right,x);
+   top=Math.min(top,y);bottom=Math.max(bottom,y);count++;
+  }
+ }
+ if(count<50||bottom-top<h*.2)return {x:0,y:0,w,h};
+ const coloredWidth=Math.max(1,right-left),fullLeft=Math.max(0,left-coloredWidth*.46);
+ return {x:fullLeft,y:Math.max(0,top-h*.01),w:Math.min(w,Math.max(right+coloredWidth*.05,fullLeft+coloredWidth)-fullLeft),h:Math.min(h,Math.max(bottom+10,top+h*.02)-Math.max(0,top-h*.01))};
+}
+async function tableImageText(imageSource,worker){
+ const w=imageSource.width,h=imageSource.height;
+ if(!w||!h)throw Error('Не удалось определить размер фотографии');
+ const base=document.createElement('canvas');
+ const scale=Math.min(1,1600/Math.max(w,h));base.width=Math.max(1,Math.round(w*scale));base.height=Math.max(1,Math.round(h*scale));
+ const context=base.getContext('2d',{willReadFrequently:true});
+ if(!context)throw Error('Браузер не поддерживает подготовку изображения');
+ context.drawImage(imageSource,0,0,base.width,base.height);
+ const doc=imageBounds(context,base.width,base.height);
+ const cropPlans=[
+  {name:'По перегону',x:0,y:0,width:.50,height:1},
+  {name:'По станциям',x:.61,y:.57,width:.39,height:.43}
+ ];
+ let text='',drafts=[],unresolved=[];
+ for(const [i,plan] of cropPlans.entries()){
+  status('Читаю таблицу «'+plan.name+'» ('+(i+1)+'/2)…');
+  const cw=Math.max(1,Math.round(doc.w*plan.width)),ch=Math.max(1,Math.round(doc.h*plan.height));
+  const sx=doc.x+doc.w*plan.x,sy=doc.y+doc.h*plan.y;
+  const out=document.createElement('canvas');
+  const grow=Math.min(4,1800/cw);
+  out.width=Math.max(1,Math.round(cw*grow));out.height=Math.max(1,Math.round(ch*grow));
+  out.getContext('2d').drawImage(base,sx,sy,cw,ch,0,0,out.width,out.height);
+  // OCR text is reviewed; mismatching cells never become confirmed automatically.
+  const data=await withTimeout(worker.recognize(out),45000,'Распознавание '+plan.name);
+  const part=String(data.data?.text||'');
+  text+='\n--- '+plan.name+' ---\n'+part+'\n';
+  const parsed=tableFromOcrText(part,plan.name);
+  drafts.push(...parsed.drafts);unresolved.push(...parsed.unresolved);
+  out.width=0;out.height=0;
+ }
+ base.width=0;base.height=0;
+ if(drafts.length>600)throw Error('Найдено более 600 скоростей. Разделите документ на части для проверки.');
+ return {text,drafts,unresolved};
+}
+async function readSpeedPhoto(file){
+ const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
+ const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознавание таблиц: '+Math.round((m.progress||0)*100)+'%')}});
+ let bitmap=null;
+ try{
+  if(typeof createImageBitmap==='function')bitmap=await createImageBitmap(file);
+  else{
+   const u=URL.createObjectURL(file);
+   try{bitmap=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Не удалось открыть фотографию'));img.src=u})}finally{URL.revokeObjectURL(u)}
+  }
+  return await tableImageText(bitmap,worker);
+ }finally{if(bitmap?.close)bitmap.close();await worker.terminate()}
+}
 function coverageReport(rows,route){
  const report={};
  for(const category of ['passenger','freight','empty']){
@@ -329,7 +394,7 @@ async function handleFile(file){
  if(!isPdf&&!isImage)return status('Поддерживаются фотографии и PDF.',true);
  status('Подготавливаю '+file.name+'…');
  try{
-  const result=isPdf?await pdfText(file):{text:await imageText(file),drafts:[]};
+  const result=isPdf?await pdfText(file):ctx.tab==='permanent'?await readSpeedPhoto(file):{text:await imageText(file),drafts:[],unresolved:[]};
   $('speedImportText').value=result.text;
   if(result.drafts.length){candidates=result.drafts;showDrafts();status('Найдено '+candidates.length+' скоростей. '+(result.unresolved?.length?'Не разрешено границ по станциям: '+result.unresolved.length+'. Эти участки останутся пустыми до проверки. ':'')+'Сверьте все км, ПК и категории с PDF перед сохранением.');}
   else handleText();
