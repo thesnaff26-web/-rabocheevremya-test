@@ -291,8 +291,8 @@ async function readSpeedPhoto(file){
  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознавание таблиц: '+Math.round((m.progress||0)*100)+'%')}});
  let bitmap=null;
  try{
-  if(typeof createImageBitmap==='function')bitmap=await createImageBitmap(file);
-  else{
+  if(typeof createImageBitmap==='function'){try{bitmap=await createImageBitmap(file)}catch(_){/* use Image fallback for iPhone file formats */}}
+  if(!bitmap){
    const u=URL.createObjectURL(file);
    try{bitmap=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('Не удалось открыть фотографию'));img.src=u})}finally{URL.revokeObjectURL(u)}
   }
