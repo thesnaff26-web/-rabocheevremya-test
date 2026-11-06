@@ -193,6 +193,8 @@ async function saveDrafts(){
 }
 async function handleFile(file){
  if(!file)return;
+ // Never leave drafts from a previous document available while opening another one.
+ candidates=[];$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;
  if(file.size>MAX_FILE)return status('Максимальный размер файла — 18 МБ.',true);
  const isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name||'');
  const isImage=file.type.startsWith('image/')||/\.(png|jpe?g|webp|heic)$/i.test(file.name||'');
@@ -230,5 +232,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,extract,rowFromLine};
+root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,tableFromPdfItems};
 })(typeof globalThis!=='undefined'?globalThis:this);
