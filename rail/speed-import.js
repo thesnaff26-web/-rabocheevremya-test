@@ -134,7 +134,7 @@ function tableFromPdfItems(items,pageHeight,pageWidth=595){
     .sort((a,b)=>a.x-b.x).map(it=>it.str).join(' ').trim();
    const range=stationlessRange(location),boundary=stationBoundary(location);
    const slots=side==='left'
-     ?[{category:'passenger',from:.17,to:.21},{category:'freight',from:.21,to:.25},{category:'empty',from:.25,to:.31}]
+     ?[{category:'passenger',from:.17,to:.21},{category:'freight',from:.21,to:.25},{category:'empty',from:.25,to:.29}]
      :[{category:'passenger',from:.855,to:.90},{category:'freight',from:.90,to:.947},{category:'empty',from:.947,to:1.02}];
    const speeds={};
    for(const col of slots){
@@ -143,7 +143,7 @@ function tableFromPdfItems(items,pageHeight,pageWidth=595){
    }
    // The source table uses columns centered at x≈109, 134 and 158 on a 595px PDF.
    // Previous bounds accidentally classified the second speed as the first and lost
-   // the third column, producing only a handful of entries.
+   // the third column. Empty-train speed must stop BEFORE the station-name cell.
    // Both three-category tables require all three clearly read speeds.
    // Do not accidentally import brake-check or other unrelated tables.
    if(Object.keys(speeds).length!==3)continue;
