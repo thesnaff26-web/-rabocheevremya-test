@@ -60,3 +60,14 @@
 #userSpeedForm .userSpeedGrid input:focus,#userSpeedForm input[name^="pole"]:focus{
  outline:3px solid #4b9dff;outline-offset:1px;
 }
+
+/* Route-style scroll wheels for warning start/end in Moscow time. */
+#userSpeedManager .userWheelLabels{display:grid;grid-template-columns:1fr 1.2fr 1.18fr .82fr .82fr;color:#a9bed0;text-align:center;font-size:12px;gap:3px;margin:13px 0 2px}
+#userSpeedManager .userWheelBody{height:210px;position:relative;display:grid;grid-template-columns:1fr 1.2fr 1.18fr .82fr .82fr;gap:3px;overflow:hidden;isolation:isolate}
+#userSpeedManager .userWheelCol{height:210px;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior:contain;padding:78px 0;position:relative;z-index:1}
+#userSpeedManager .userWheelCol::-webkit-scrollbar{display:none}
+#userSpeedManager .userWheelItem{height:54px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;scroll-snap-stop:normal;flex-shrink:0;font-size:19px;font-weight:750;color:#edf5fb;user-select:none}
+#userSpeedManager .userWheelFocus{position:absolute;left:0;right:0;top:78px;height:54px;border-top:1px solid #7790a5;border-bottom:1px solid #7790a5;border-radius:10px;background:#ffffff0b;pointer-events:none;z-index:2}
+#userSpeedManager .userTimeHead{min-height:52px}
+#userSpeedManager .userTimeSheet{padding-top:8px}
+#userSpeedManager .userTimeFoot{margin-top:14px}
