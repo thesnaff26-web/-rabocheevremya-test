@@ -153,3 +153,10 @@
 #speedImportPanel .speedImportReviewEmpty{font-size:13px;margin:12px 0;color:#b4cad7}
 #speedImportPanel .speedImportDraft .speedImportWarning{border-left:3px solid #fbbf24;padding:5px 9px;color:#ffe4ab;line-height:1.4;font-size:12px}
 #speedImportPanel .speedImportDraft .speedImportWarning[hidden]{display:none!important}
+
+/* Select-all applies only to currently displayed import review group. */
+#speedImportPanel .speedImportSelectBar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 14px;padding:11px 12px;margin:8px 0 12px;background:#183146;border:1px solid #45647c;border-radius:11px}
+#speedImportPanel .speedImportSelectBar label{display:flex;align-items:center;gap:10px;font-weight:750;font-size:14px;cursor:pointer;min-height:35px}
+#speedImportPanel .speedImportSelectBar input{width:25px;height:25px;margin:0;flex:0 0 auto;accent-color:#2ed1a2}
+#speedImportPanel #speedImportSelectionSummary{font-size:12px;color:#bdd2df;font-variant-numeric:tabular-nums}
+@media(max-width:390px){#speedImportPanel .speedImportSelectBar{flex-direction:column;align-items:flex-start}}
