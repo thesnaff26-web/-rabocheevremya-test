@@ -82,6 +82,32 @@ function stationBoundary(raw){
  if(!start&&end&&stationKey(m[1]))return {kind:'fromStation',station:stationKey(m[1]),numeric:end};
  return null;
 }
+
+function speedTripleFromLine(raw,section){
+ const line=String(raw||'').replace(/[–—−]/g,'-').replace(/[|;]+/g,' ').replace(/\s+/g,' ').trim();
+ // A column-based speed table contains precisely three terminal speed cells.
+ const triple=line.match(/(?:^|\s)(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})\s*$/);
+ if(!triple)return null;
+ const speeds=triple.slice(1).map(Number);
+ if(speeds.some(v=>v<1||v>200))return null;
+ const location=line.slice(0,triple.index).trim();
+ // Preserve the source row name and all three category values; never merge them.
+ const range=stationlessRange(location);
+ if(!range)return {location,section,speeds,unresolved:true};
+ return {location,section,speeds,range};
+}
+function tableFromOcrText(text,section){
+ const drafts=[],unresolved=[];
+ for(const line of String(text||'').split(/\r?\n/)){
+  const data=speedTripleFromLine(line,section);
+  if(!data)continue;
+  if(!data.range){unresolved.push(section+': '+data.location+' | '+data.speeds.join('/')+' — требуется ручная проверка км/ПК');continue}
+  for(const [i,category] of ['passenger','freight','empty'].entries()){
+   drafts.push({...data.range,speed:data.speeds[i],category,begin:'',endTime:'',untilCancel:false,source:section+' · '+data.location+' | '+['Пас','ГР','Пор'][i]+' '+data.speeds[i]+' [фото, проверьте]'});
+  }
+ }
+ return {drafts,unresolved};
+}
 function tableFromPdfItems(items,pageHeight){
  const rows=[];
  for(const item of items||[]){
@@ -97,7 +123,7 @@ function tableFromPdfItems(items,pageHeight){
  const bySide={left:[],right:[]};
  for(const row of rows.sort((a,b)=>a.y-b.y)){
   for(const side of ['left','right']){
-   if(side==='right'&&row.y<650)continue;
+   // Station speed table may start above y=650 depending on PDF page scale.
    const cells=row.items.filter(it=>side==='left'?it.x<205:it.x>=428);
    if(!cells.length)continue;
    const location=cells.filter(it=>side==='left'?it.x<108:it.x<527)
@@ -112,8 +138,10 @@ function tableFromPdfItems(items,pageHeight){
     const token=cells.filter(it=>it.x>=col.from&&it.x<col.to).map(it=>it.str).join('').trim();
     if(/^\d{1,3}$/.test(token)&&+token>=1&&+token<=200)speeds[col.category]=+token;
    }
-   if(!Object.keys(speeds).length)continue;
-   bySide[side].push({location,range,boundary,speeds});
+   // Both three-category tables require all three clearly read speeds.
+   // Do not accidentally import brake-check or other unrelated tables.
+   if(Object.keys(speeds).length!==3)continue;
+   bySide[side].push({location,range,boundary,speeds,section:side==='left'?'По перегону':'По станциям'});
   }
  }
  for(const sequence of Object.values(bySide)){
@@ -137,9 +165,9 @@ function tableFromPdfItems(items,pageHeight){
      const previous=sequence[i-1];
      if(previous?.boundary?.kind==='toStation'&&previous.boundary.station===row.boundary.station&&previous.speeds[category]===speed)continue;
     }
-    if(!range){pending.push(row.location+' / '+category);continue}
+    if(!range){pending.push(row.section+': '+row.location+' / '+category+' — нужно уточнить км/ПК');continue}
     drafts.push({...range,speed,category,begin:'',endTime:'',untilCancel:false,
-      source:row.location+' | '+(category==='passenger'?'Пас':category==='freight'?'ГР':'Пор')+' '+speed+
+      source:row.section+' · '+row.location+' | '+(category==='passenger'?'Пас':category==='freight'?'ГР':'Пор')+' '+speed+
        (!row.range?' [две строки объединены по станции]':'')});
    }
   }
@@ -334,5 +362,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,coverageReport};
+root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
 })(typeof globalThis!=='undefined'?globalThis:this);
