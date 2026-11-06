@@ -414,7 +414,6 @@ async function du61Photo(file){
    parts.push(rows);
    crop.width=0;crop.height=0;
   }
-  canvas.width=0;canvas.height=0;
   let outcome=du61DraftFromColumns(parts[2],parts[0],parts[1]);
   if(outcome.drafts.length===0){
    status('ДУ-61: дополнительная проверка по полному снимку…');
@@ -426,6 +425,7 @@ async function du61Photo(file){
     if(extra.drafts.length>outcome.drafts.length)outcome=extra;
    }
   }
+  canvas.width=0;canvas.height=0;
   if(!outcome.drafts.length)outcome.unresolved.push('Не удалось надёжно сопоставить три колонки ДУ-61. Сфотографируйте ровно и ближе, чтобы таблица заняла большую часть кадра.');
   return {text,drafts:outcome.drafts,unresolved:outcome.unresolved};
  }finally{if(bitmap?.close)bitmap.close();await worker.terminate()}
