@@ -4,7 +4,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const MAX_FILE=18*1024*1024;
-let ctx=null,candidates=[];
+let ctx=null,candidates=[],reviewTab='ready';
 const view=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 function withTimeout(promise,ms,label){
  return new Promise((resolve,reject)=>{
@@ -353,14 +353,60 @@ function draftProblems(a,route){
  }else out.push('отсутствует конечная граница — отображается только точка');
  return out;
 }
+function draftFromCard(card){
+ const value=k=>card.querySelector('[data-field="'+k+'"]')?.value.trim()||'';
+ return {km1:value('km1'),pk1:value('pk1'),km2:value('km2'),pk2:value('pk2'),speed:value('speed'),category:value('category'),
+   begin:value('begin'),endTime:value('endTime'),untilCancel:!!card.querySelector('[data-field="untilCancel"]')?.checked};
+}
+function issuesForDraft(a,route){
+ const issues=draftProblems(a,route);
+ if(!/^\d{4}$/.test(a.km1)||!/^(10|[1-9])$/.test(a.pk1))issues.push('проверьте начало км/ПК');
+ if((a.km2||a.pk2)&&(!/^\d{4}$/.test(a.km2)||!/^(10|[1-9])$/.test(a.pk2)))issues.push('проверьте конец км/ПК');
+ if(!/^\d{1,3}$/.test(String(a.speed))||+a.speed<1||+a.speed>200)issues.push('проверьте скорость');
+ if(!['all','passenger','freight','empty'].includes(a.category))issues.push('выберите категорию поезда');
+ if(ctx?.tab==='temporary'){
+  try{
+   const from=parseMsk(a.begin),to=parseMsk(a.endTime);
+   if(to&&!from)issues.push('нужно начало действия по МСК');
+   if(from&&to&&Date.parse(to+':00+03:00')<Date.parse(from+':00+03:00'))issues.push('конец действия раньше начала');
+  }catch(e){issues.push(e.message)}
+ }
+ return [...new Set(issues)];
+}
+function setReviewTab(next){
+ if(!['ready','review'].includes(next))return;
+ reviewTab=next;refreshReviewTabs();
+}
+function refreshReviewTabs(){
+ const tabs=$('speedImportReviewTabs'),container=$('speedImportDrafts');if(!tabs||!container)return;
+ let ready=0,review=0;
+ for(const card of container.querySelectorAll('.speedImportDraft')){
+  const issues=issuesForDraft(draftFromCard(card),ctx?.route());
+  const needsReview=issues.length>0;
+  card.dataset.reviewStatus=needsReview?'review':'ready';
+  const warning=card.querySelector('.speedImportWarning');
+  if(warning){warning.hidden=!needsReview;warning.textContent=issues.join('; ')}
+  card.hidden=(needsReview?'review':'ready')!==reviewTab;
+  if(needsReview)review++;else ready++;
+ }
+ const values={ready,review};
+ for(const button of tabs.querySelectorAll('[data-review-tab]')){
+  const key=button.dataset.reviewTab;
+  button.classList.toggle('active',key===reviewTab);
+  button.setAttribute('aria-selected',String(key===reviewTab));
+  button.querySelector('.speedImportTabCount').textContent=String(values[key]);
+ }
+ const empty=$('speedImportReviewEmpty');
+ if(empty){const total=values[reviewTab];empty.hidden=total!==0;empty.textContent=reviewTab==='review'?'Нет записей с обнаруженными ошибками.':'Нет распознанных записей без замечаний.'}
+}
 function showDrafts(){
  const list=$('speedImportDrafts');if(!list)return;
  list.replaceChildren();
- if(!candidates.length){list.innerHTML='<p>Скорости не найдены автоматически. Для таблиц PDF используйте оригинальный цифровой файл. Можно исправить распознанный текст или добавить строку вручную.</p>';showCoverage();return}
+ if(!candidates.length){list.innerHTML='<p>Скорости не найдены автоматически. Для таблиц PDF используйте оригинальный цифровой файл. Можно исправить распознанный текст или добавить строку вручную.</p>';refreshReviewTabs();showCoverage();return}
  for(let i=0;i<candidates.length;i++){
   const a=candidates[i],card=document.createElement('div');card.className='speedImportDraft';
-  const problems=draftProblems(a,ctx.route());
-  card.innerHTML='<label><input type="checkbox" class="impSelected" '+(problems.some(p=>p.includes('направления')||p.includes('вне выбранного'))?'':'checked')+'> Строка '+(i+1)+' — проверить</label>'+(problems.length?'<p class="speedImportWarning">'+view(problems.join('; '))+'</p>':'')+'<div class="speedImportNumbers">'+
+  const problems=issuesForDraft(a,ctx.route());
+  card.innerHTML='<label><input type="checkbox" class="impSelected" '+(problems.length?'':'checked')+'> Строка '+(i+1)+' — проверить</label>'+(problems.length?'<p class="speedImportWarning">'+view(problems.join('; '))+'</p>':'')+'<div class="speedImportNumbers">'+
    [['km1','Начало км'],['pk1','ПК'],['km2','Конец км'],['pk2','ПК'],['speed','км/ч']].map(([k,label])=>'<label>'+label+'<input data-field="'+k+'" type="text" inputmode="numeric" pattern="[0-9]*" value="'+view(a[k])+'"></label>').join('')+'</div>'+
    '<label>Категория<select data-field="category"><option value="">Выберите</option><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>'+
    (ctx.tab==='temporary'?'<div class="speedImportDates"><label>Начало МСК (необязательно)<input data-field="begin" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.begin)+'"></label><label>Конец МСК (необязательно)<input data-field="endTime" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.endTime)+'"></label><label><input type="checkbox" data-field="untilCancel"> До отмены</label></div>':'')+
@@ -368,10 +414,11 @@ function showDrafts(){
   card.querySelector('[data-field="category"]').value=a.category||'';
   list.append(card);
  }
- showCoverage();
+ reviewTab=[...list.querySelectorAll('.speedImportDraft')].some(card=>issuesForDraft(draftFromCard(card),ctx.route()).length)?'review':'ready';
+ refreshReviewTabs();showCoverage();
 }
 function handleText(){candidates=extract($('speedImportText').value);showDrafts();status('Найдено строк: '+candidates.length+'. Проверьте все значения перед сохранением.')}
-function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',category:'',begin:'',endTime:'',source:'ручная корректировка'});showDrafts();status('Заполните новую строку и проверьте исходный документ.')}
+function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',category:'',begin:'',endTime:'',source:'ручная корректировка'});showDrafts();setReviewTab('review');status('Заполните новую строку и проверьте исходный документ.')}
 function readDrafts(){
  if(!ctx.route())throw Error('Сначала выберите участок и направление');
  const route=ctx.route(),out=[];
@@ -406,7 +453,7 @@ function clearImportDrafts(){
  const drafts=$('speedImportDrafts');if(drafts)drafts.replaceChildren();
  const checkbox=$('speedImportConfirm');if(checkbox)checkbox.checked=false;
  for(const id of ['speedImportFile','speedImportCamera']){const el=$(id);if(el)el.value=''}
- showUnresolved([]);showCoverage();
+ showUnresolved([]);refreshReviewTabs();showCoverage();
 }
 async function saveDrafts(){
  try{
@@ -458,7 +505,9 @@ function setup(options){
  '<p class="speedImportDisclaimer">Для первого распознавания нужен интернет (библиотеки загружаются с внешних CDN). Обработка выполняется в браузере, приложение не сохраняет фото/PDF на сервере. Сканированные PDF распознаются максимум по 5 страницам. Результат нужно сверить с документом.</p>'+
  '<label>Распознанный текст (можно исправить)<textarea id="speedImportText" rows="5" placeholder="6904/3-6903/5;40&#10;6903/6-6902/1;60"></textarea></label>'+
  '<div class="speedImportActions"><button type="button" id="speedImportParse">Найти строки</button><button type="button" id="speedImportAddManual">Добавить строку</button><button type="button" id="speedImportClear">Очистить распознанное</button></div>'+
- '<p id="speedImportStatus" role="status"></p><div id="speedImportUnresolved" class="speedImportUnresolved" hidden></div><div id="speedImportDrafts"></div><div id="speedImportCoverage" class="speedImportCoverage" role="status" hidden></div>'+
+ '<p id="speedImportStatus" role="status"></p><div id="speedImportUnresolved" class="speedImportUnresolved" hidden></div>'+
+ '<div id="speedImportReviewTabs" class="speedImportReviewTabs" role="tablist" aria-label="Результаты распознавания"><button type="button" role="tab" data-review-tab="ready" aria-selected="true">Распознаны <span class="speedImportTabCount">0</span></button><button type="button" role="tab" data-review-tab="review" aria-selected="false">На проверку <span class="speedImportTabCount">0</span></button></div>'+
+ '<p id="speedImportReviewEmpty" class="speedImportReviewEmpty" hidden></p><div id="speedImportDrafts"></div><div id="speedImportCoverage" class="speedImportCoverage" role="status" hidden></div>'+
  '<label class="speedImportReview"><input type="checkbox" id="speedImportConfirm"> Я сверил выбранные записи с исходным документом, включая направление, км, ПК, скорости и время МСК.</label>'+
  '<button type="button" id="speedImportSave">Сохранить проверенные записи</button>';
  form.parentNode.insertBefore(wrapper,form);
@@ -468,12 +517,21 @@ function setup(options){
  $('speedImportAddManual').onclick=addManual;
  $('speedImportSave').onclick=saveDrafts;
  $('speedImportClear').onclick=()=>{clearImportDrafts();status('Распознанный текст и черновики очищены. Сохранённые записи не изменились.')};
- $('speedImportDrafts').addEventListener('input',showCoverage);
- $('speedImportDrafts').addEventListener('change',showCoverage);
+ for(const button of wrapper.querySelectorAll('[data-review-tab]'))button.onclick=()=>setReviewTab(button.dataset.reviewTab);
+ const draftChange=event=>{
+  const card=event.target.closest('.speedImportDraft');
+  if(card){
+   // An edited row changes group immediately; retain its checked state.
+   // Invalid rows are still rejected by readDrafts even if manually checked.
+   refreshReviewTabs();showCoverage();
+  }
+ };
+ $('speedImportDrafts').addEventListener('input',draftChange);
+ $('speedImportDrafts').addEventListener('change',draftChange);
 }
 function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
- ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
+ ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];reviewTab='ready';showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;refreshReviewTabs();showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
 root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
 })(typeof globalThis!=='undefined'?globalThis:this);
