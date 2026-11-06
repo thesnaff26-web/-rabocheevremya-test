@@ -338,6 +338,31 @@ function du61DraftFromColumns(speedRows,locationRows,timeRows){
  }
  return {drafts,unresolved};
 }
+function du61RecoveryDrafts(locationRows,route){
+ // Fallback for failed column alignment: preserve OCR fragments for manual
+ // correction, not as automatically verified speed warnings.
+ const drafts=[],seen=new Set();
+ for(const line of locationRows){
+  const raw=String(line.text||'').replace(/\s+/g,' ').trim();
+  if(!/(?:пк|nk|nк)/i.test(raw)||!/\d{4}/.test(raw))continue;
+  if(seen.has(raw))continue;
+  seen.add(raw);
+  if(drafts.length>=30)break;
+  const pos=du61Location(raw);
+  let safe={km1:'',pk1:'',km2:'',pk2:''};
+  if(pos&&route){
+   const first=pos.km1*1000+(pos.pk1-1)*100;
+   const last=pos.km2!==''?pos.km2*1000+(pos.pk2-1)*100:null;
+   // Prefill only a single unambiguous point. The full range must be checked.
+   if(first>=route.start&&first<route.end&&last===null)
+    safe={km1:pos.km1,pk1:pos.pk1,km2:'',pk2:''};
+  }
+  drafts.push({...safe,speed:'',category:'all',begin:'',endTime:'',
+   untilCancel:false,ocrUnverified:true,stationHint:'ДУ-61: необходимо проверить исходную строку',
+   source:'ДУ-61 · фрагмент без сопоставленной скорости: '+raw+' [заполнить по оригиналу]'});
+ }
+ return drafts;
+}
 function du61WholePhotoRows(result,width){
  const words=result?.data?.words||[];
  if(!words.length)return null;
@@ -423,6 +448,13 @@ async function du61Photo(file){
    if(columns){
     const extra=du61DraftFromColumns(columns[2],columns[0],columns[1]);
     if(extra.drafts.length>outcome.drafts.length)outcome=extra;
+   }
+  }
+  if(!outcome.drafts.length){
+   const recovered=du61RecoveryDrafts(parts[0],ctx?.route?.());
+   if(recovered.length){
+    outcome.drafts=recovered;
+    outcome.unresolved.push('Автоматически ограничения не определены. Ниже только черновики с текстом км/ПК без скорости: сверяйте каждую строку по оригиналу ДУ-61.');
    }
   }
   canvas.width=0;canvas.height=0;
@@ -808,5 +840,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];reviewTab='ready';showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;refreshReviewTabs();showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport,du61Location,du61DraftFromColumns};
+root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport,du61Location,du61DraftFromColumns,du61RecoveryDrafts};
 })(typeof globalThis!=='undefined'?globalThis:this);
