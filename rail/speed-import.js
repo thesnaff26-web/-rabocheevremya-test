@@ -327,6 +327,7 @@ function du61DraftFromColumns(speedRows,locationRows,timeRows){
   }
   const atTime=timeRows.map(row=>({...row,delta:Math.abs(sr.y-row.y)})).sort((a,b)=>a.delta-b.delta)[0];
   const timeHint=atTime&&atTime.delta<26?atTime.text:'не распознано';
+  if(drafts.some(a=>a.km1===closest.position.km1&&a.pk1===closest.position.pk1&&a.speed===speed))continue;
   drafts.push({...closest.position,speed,category:'all',begin:'',endTime:'',untilCancel:false,
    source:'ДУ-61 · '+closest.text+' | '+speed+' км/ч · время по документу: '+timeHint+' [проверить МСК]',
    stationHint:closest.position.km2===''?'ДУ-61: конец ограничения не указан':'',
