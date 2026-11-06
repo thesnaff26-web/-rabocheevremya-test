@@ -2,10 +2,7 @@
 'use strict';
 // User-managed, offline-only rail speed annotations. No operational values are inferred.
 const KEY='rail-user-speeds-v1', $=id=>document.getElementById(id);
-const VIS_KEY='rail-user-speed-visible-categories-v1';
-const PERMANENT_COLORS={passenger:'#60a5fa',freight:'#fbbf24',empty:'#c4b5fd',all:'#f1f5f9'};
-let permanentVisible={passenger:true,freight:true,empty:true};
-try{const saved=JSON.parse(localStorage.getItem(VIS_KEY)||'null');if(saved&&typeof saved==='object')for(const k of ['passenger','freight','empty'])if(typeof saved[k]==='boolean')permanentVisible[k]=saved[k]}catch(_){}
+// Historical permanent-speed records remain in local storage for backward-compatible JSON backups.
 let records=[],route=null,category='freight',selectedTab='temporary',shown={temporary:true,tp:true},lastPosition=null,rerender=()=>{};
 try { const a=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(a))records=a.filter(valid); } catch(e){console.warn('Скорости: база недоступна',e);}
 function valid(a){return a&&typeof a.id==='string'&&typeof a.routeId==='string'&&['permanent','temporary','tp'].includes(a.type)&&Number.isFinite(a.start)&&(a.type==='tp'?(Number.isFinite(a.lower)&&Number.isFinite(a.raise)):((a.end==null||Number.isFinite(a.end))&&Number.isFinite(a.speed)&&a.speed>0));}
