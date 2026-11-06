@@ -346,7 +346,9 @@ async function du61Photo(file){
    finally{URL.revokeObjectURL(url)}
   }
   const canvas=document.createElement('canvas');
-  const ratio=Math.min(2,1700/Math.max(bitmap.width,bitmap.height));
+  // Preserve the original camera/gallery pixels. Previous 1700px resizing
+  // downsampled high-resolution DU-61 photos before recognizing tiny type.
+  const ratio=1;
   canvas.width=Math.round(bitmap.width*ratio);canvas.height=Math.round(bitmap.height*ratio);
   const context=canvas.getContext('2d',{willReadFrequently:true});
   context.drawImage(bitmap,0,0,canvas.width,canvas.height);
@@ -359,20 +361,22 @@ async function du61Photo(file){
   for(let i=0;i<regions.length;i++){
    const reg=regions[i],sx=Math.floor(canvas.width*reg.x),sy=Math.floor(canvas.height*reg.y);
    const sw=Math.round(canvas.width*reg.w),sh=Math.round(canvas.height*reg.h);
-   const crop=document.createElement('canvas');crop.width=sw*2;crop.height=sh*2;
-   const cc=crop.getContext('2d',{willReadFrequently:true});cc.drawImage(canvas,sx,sy,sw,sh,0,0,crop.width,crop.height);
-   const pixels=cc.getImageData(0,0,crop.width,crop.height);
-   for(let p=0;p<pixels.data.length;p+=4){
-    const v=.299*pixels.data[p]+.587*pixels.data[p+1]+.114*pixels.data[p+2];
-    const clean=v<155?Math.max(0,(v-60)*.8):Math.min(255,v*1.1+8);
-    pixels.data[p]=pixels.data[p+1]=pixels.data[p+2]=clean;
-   }
-   cc.putImageData(pixels,0,0);
+   const crop=document.createElement('canvas');
+   // Resize only a cropped column when needed for small lettering, never shrink
+   // the whole original image. The source pixels are not JPEG-recompressed.
+   const cropScale=Math.max(1,Math.min(2.5,950/Math.max(1,sw)));
+   crop.width=Math.max(1,Math.round(sw*cropScale));
+   crop.height=Math.max(1,Math.round(sh*cropScale));
+   const cc=crop.getContext('2d',{willReadFrequently:true});
+   cc.imageSmoothingEnabled=true;cc.imageSmoothingQuality='high';
+   cc.drawImage(canvas,sx,sy,sw,sh,0,0,crop.width,crop.height);
+   // Avoid global thresholding: the old darkening destroyed faint dot-matrix
+   // characters on wrinkled DU-61 paper.
    status('ДУ-61: распознаю колонку '+reg.title+' ('+(i+1)+'/3)');
    if(i===2)await worker.setParameters({tessedit_char_whitelist:'0123456789'});
    const scan=await withTimeout(worker.recognize(crop),60000,'Распознавание '+reg.title);
    text+='\n--- '+reg.title+' ---\n'+(scan.data.text||'')+'\n';
-   parts.push(du61Rows(scan,sy*2));
+   parts.push(du61Rows(scan,Math.round(sy*cropScale)));
    crop.width=0;crop.height=0;
   }
   canvas.width=0;canvas.height=0;
