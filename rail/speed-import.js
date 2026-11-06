@@ -311,27 +311,30 @@ function du61DraftFromColumns(speedRows,locationRows,timeRows){
  const drafts=[],unresolved=[];
  const sortedLocations=locationRows.map(row=>({...row,position:du61Location(row.text)}))
   .filter(row=>row.position).sort((a,b)=>a.y-b.y);
- // Compare rows using y coordinates within the same scaled document crop.
+ const dates=timeRows.filter(row=>/\b(?:\d{1,2}\s*[-:]\s*\d{1,2}(?::\d{2})?|до\s*отм|до\s*отмен)/i.test(row.text));
+ const used=new Set();
  for(const sr of speedRows){
-  const token=sr.text.replace(/[OoОо]/g,'0').replace(/[ІI|]/g,'1').replace(/\s/g,'');
-  const found=token.match(/^(?:[1-9]\d?|1[0-4]\d|150)$/);
-  if(!found)continue;
-  const speed=Number(found[0]);if(speed<10||speed>150)continue;
-  const closest=sortedLocations
-   .map(row=>({...row,delta:Math.abs(sr.y-row.y)}))
+  // OCR often produces standalone numbers from table ruling and dot-matrix noise.
+  // A speed without a matching position and time on the same line is NOT a warning.
+  const token=String(sr.text).trim();
+  if(!/^\d{2,3}$/.test(token))continue;
+  const speed=Number(token);
+  if(speed<10||speed>150)continue;
+  const closest=sortedLocations.map(row=>({...row,delta:Math.abs(sr.y-row.y)}))
    .sort((a,b)=>a.delta-b.delta)[0];
-  // Only accept speed and location that share a nearby horizontal row.
-  if(!closest||closest.delta>22){
-   unresolved.push('ДУ-61: скорость '+speed+' км/ч, точные км/ПК не сопоставлены со строкой');
-   continue;
-  }
-  const atTime=timeRows.map(row=>({...row,delta:Math.abs(sr.y-row.y)})).sort((a,b)=>a.delta-b.delta)[0];
-  const timeHint=atTime&&atTime.delta<26?atTime.text:'не распознано';
-  if(drafts.some(a=>a.km1===closest.position.km1&&a.pk1===closest.position.pk1&&a.speed===speed))continue;
+  const atTime=dates.map(row=>({...row,delta:Math.abs(sr.y-row.y)}))
+   .sort((a,b)=>a.delta-b.delta)[0];
+  if(!closest||closest.delta>28||!atTime||atTime.delta>30)continue;
+  const key=[closest.position.km1,closest.position.pk1,closest.position.km2,closest.position.pk2,speed].join(':');
+  if(used.has(key))continue;
+  used.add(key);
   drafts.push({...closest.position,speed,category:'all',begin:'',endTime:'',untilCancel:false,
-   source:'ДУ-61 · '+closest.text+' | '+speed+' км/ч · время по документу: '+timeHint+' [проверить МСК]',
+   source:'ДУ-61 · '+closest.text+' | '+speed+' км/ч · время по документу: '+atTime.text+' [проверить МСК]',
    stationHint:closest.position.km2===''?'ДУ-61: конец ограничения не указан':'',
    ocrUnverified:true});
+ }
+ if(!drafts.length){
+  unresolved.push('Не удалось надёжно связать ограничения скорости с км/ПК и временем в ДУ-61. Неподтверждённые числа из OCR не считаются скоростями.');
  }
  return {drafts,unresolved};
 }
