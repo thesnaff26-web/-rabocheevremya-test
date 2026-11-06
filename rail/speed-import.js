@@ -494,24 +494,36 @@ function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',categ
 function validateOneDraft(card,i,route){
  const get=k=>card.querySelector('[data-field="'+k+'"]');
  const val=k=>get(k)?.value.trim()||'';
- const km1=+val('km1'),pk1=+val('pk1'),km2=+val('km2'),pk2=+val('pk2'),speed=+val('speed');
+ const hasStart=val('km1')!==''||val('pk1')!=='';
  const hasEnd=val('km2')!==''||val('pk2')!=='';
- if(card.dataset.stationHint&&!hasEnd)throw Error('Строка '+(i+1)+': уточните станционную границу и оба поля конца');
- if(!/^\d{4}$/.test(val('km1'))||!(pk1>=1&&pk1<=10)||!Number.isInteger(pk1)||
-   (hasEnd&&(!/^\d{4}$/.test(val('km2'))||!Number.isInteger(pk2)||pk2<1||pk2>10))||
-   !Number.isInteger(speed)||speed<1||speed>200)throw Error('Строка '+(i+1)+': проверьте км, ПК и скорость');
- if(hasEnd&&(!val('km2')||!val('pk2')))throw Error('Строка '+(i+1)+': заполните оба поля конца');
- const start=km1*1000+(pk1-1)*100,end=hasEnd?km2*1000+(pk2-1)*100:null;
- if(end!==null&&start===end)throw Error('Строка '+(i+1)+': начало и конец совпадают');
- if(end!==null&&(end-start)*route.direction<=0)throw Error('Строка '+(i+1)+': границы против направления движения');
- if(start<route.start||start>=route.end||(end!==null&&(end<route.start||end>route.end)))throw Error('Строка '+(i+1)+': км вне выбранного участка');
- if(!['all','freight','passenger','empty'].includes(val('category')))throw Error('Строка '+(i+1)+': выберите категорию');
+ const speed=Number(val('speed'));
+ if(!hasStart&&!hasEnd)throw Error('Строка '+(i+1)+': нужен хотя бы один км/ПК и скорость');
+ if(!Number.isInteger(speed)||speed<1||speed>200)throw Error('Строка '+(i+1)+': проверьте скорость');
+ const readPoint=(km,pk,part)=>{
+  if(!/^\d{4}$/.test(val(km))||!/^(10|[1-9])$/.test(val(pk)))
+   throw Error('Строка '+(i+1)+': заполните километр и ПК '+part);
+  const x=Number(val(km))*1000+(Number(val(pk))-1)*100;
+  if(x<route.start||x>=route.end)throw Error('Строка '+(i+1)+': '+part+' вне выбранного участка');
+  return x;
+ };
+ const start=hasStart?readPoint('km1','pk1','начала'):null;
+ const end=hasEnd?readPoint('km2','pk2','конца'):null;
+ if(start!==null&&end!==null&&(end-start)*route.direction<=0)
+  throw Error('Строка '+(i+1)+': границы против направления движения');
+ if(!['all','freight','passenger','empty'].includes(val('category')))
+  throw Error('Строка '+(i+1)+': выберите категорию');
  const begin=ctx.tab==='temporary'?parseMsk(val('begin')):'';
  const endTime=ctx.tab==='temporary'?parseMsk(val('endTime')):'';
  const untilCancel=ctx.tab==='temporary'&&!!get('untilCancel')?.checked;
  if(endTime&&!begin)throw Error('Строка '+(i+1)+': укажите начало действия');
- if(begin&&endTime&&Date.parse(endTime+':00+03:00')<Date.parse(begin+':00+03:00'))throw Error('Строка '+(i+1)+': конец раньше начала');
- return {type:ctx.tab,routeId:route.id,category:val('category'),start,end,speed,begin,endTime:untilCancel?'':endTime,untilCancel};
+ if(begin&&endTime&&Date.parse(endTime+':00+03:00')<Date.parse(begin+':00+03:00'))
+  throw Error('Строка '+(i+1)+': конец раньше начала');
+ // Keep a partial station-boundary row as a single reference marker, never as
+ // an operational speed limit spanning an unknown distance.
+ const partial=start===null||end===null;
+ return {type:ctx.tab,routeId:route.id,category:val('category'),
+  start:start??end,end:partial?null:end,speed,begin,endTime:untilCancel?'':endTime,untilCancel,
+  ...(partial?{boundaryUnconfirmed:true,knownBoundary:start===null?'end':'start'}:{})};
 }
 function readDrafts(){
  if(!ctx.route())throw Error('Сначала выберите участок и направление');
