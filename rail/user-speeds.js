@@ -27,23 +27,49 @@ function toggle(){const f=$('userSpeedForm'),tp=f.elements.kind.value==='tp',per
 function syncTimeButtons(){const f=$('userSpeedForm');if(!f)return;for(const key of ['begin','endTime']){const b=document.querySelector('#userSpeedForm [data-time="'+key+'"]');if(b)b.textContent=f.elements[key].value?f.elements[key].value.replace('T',' · ')+' МСК':'Выбрать дату и время';}}
 function initTimePicker(){
  const f=$('userSpeedForm'),overlay=$('userTimeOverlay'),pad=n=>String(n).padStart(2,'0');
- let key=null;const wheels=Object.fromEntries(['Day','Month','Year','Hour','Minute'].map(k=>[k,$('userWheel'+k)]));
- const fill=(s)=>{const v=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s||'')?s:nowMoscow();
- const [d,t]=v.split('T'),[y,mo,day]=d.split('-').map(Number),[h,mi]=t.split(':').map(Number);
- const set=(node,values,value)=>{node.replaceChildren(...values.map(n=>{const o=document.createElement('option');o.value=String(n);o.textContent=pad(n);return o}));node.value=String(value)};
- set(wheels.Year,Array.from({length:21},(_,i)=>y-10+i),y);set(wheels.Month,Array.from({length:12},(_,i)=>i+1),mo);
- set(wheels.Day,Array.from({length:new Date(y,mo,0).getDate()},(_,i)=>i+1),day);
- set(wheels.Hour,Array.from({length:24},(_,i)=>i),h);set(wheels.Minute,Array.from({length:60},(_,i)=>i),mi);
- };
- const fixDay=()=>{const day=Number(wheels.Day.value)||1,days=new Date(+wheels.Year.value,+wheels.Month.value,0).getDate();wheels.Day.replaceChildren(...Array.from({length:days},(_,i)=>{const o=document.createElement('option');o.value=String(i+1);o.textContent=pad(i+1);return o}));wheels.Day.value=String(Math.min(day,days))};
- wheels.Year.onchange=fixDay;wheels.Month.onchange=fixDay;
- const close=()=>{overlay.hidden=true;key=null};
- document.querySelectorAll('#userSpeedForm [data-time]').forEach(b=>b.onclick=()=>{key=b.dataset.time;fill(f.elements[key].value);overlay.hidden=false});
+ let key=null;
+ const names=['Day','Month','Year','Hour','Minute'],wheels=Object.fromEntries(names.map(n=>[n,$('userWheel'+n)]));
+ const step=54,mid=2;
+ function value(name){const el=wheels[name],i=Math.max(0,Math.min(el.children.length-1,Math.round(el.scrollTop/step)));return Number(el.children[i]?.dataset.value)||0}
+ function fillWheel(name,values,chosen,loop=true){
+  const el=wheels[name],frag=document.createDocumentFragment();el.replaceChildren();el.dataset.count=String(values.length);el.dataset.loop=loop?'1':'0';
+  for(let cycle=0;cycle<(loop?5:1);cycle++)for(const v of values){const d=document.createElement('div');d.className='userWheelItem';d.dataset.value=String(v);d.textContent=name==='Year'?String(v):pad(v);frag.append(d)}
+  el.append(frag);return ((loop?mid*values.length:0)+Math.max(0,values.indexOf(chosen)))*step;
+ }
+ function fill(s){
+  const v=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s||'')?s:nowMoscow();
+  const [d,t]=v.split('T'),[y,mo,day]=d.split('-').map(Number),[h,mi]=t.split(':').map(Number);
+  const positions={Year:fillWheel('Year',Array.from({length:301},(_,i)=>1900+i),y,false),Month:fillWheel('Month',Array.from({length:12},(_,i)=>i+1),mo),Day:fillWheel('Day',Array.from({length:new Date(y,mo,0).getDate()},(_,i)=>i+1),day),Hour:fillWheel('Hour',Array.from({length:24},(_,i)=>i),h),Minute:fillWheel('Minute',Array.from({length:60},(_,i)=>i),mi)};
+  requestAnimationFrame(()=>{for(const n of names)wheels[n].scrollTop=positions[n]});
+ }
+ function recenter(name){
+  const el=wheels[name];if(el.dataset.loop!=='1')return;
+  const count=+el.dataset.count;if(!count)return;
+  const ix=Math.round(el.scrollTop/step),local=((ix%count)+count)%count;
+  const target=(mid*count+local)*step;
+  if(Math.abs(el.scrollTop-target)>count*step)el.scrollTop=target;
+ }
+ function refreshDay(){
+  const y=value('Year'),mo=value('Month');if(!y||!mo)return;
+  const count=new Date(y,mo,0).getDate();
+  if(count!==+wheels.Day.dataset.count){const current=value('Day'),pos=fillWheel('Day',Array.from({length:count},(_,i)=>i+1),Math.min(current||1,count));wheels.Day.scrollTop=pos}
+ }
+ for(const name of names)wheels[name].addEventListener('scroll',()=>{
+  const el=wheels[name];clearTimeout(el._scrollTimer);el._scrollTimer=setTimeout(()=>{recenter(name);if(name==='Month'||name==='Year')refreshDay()},110);
+ },{passive:true});
+ const close=()=>{overlay.hidden=true;document.body.style.overflow='';key=null};
+ document.querySelectorAll('#userSpeedForm [data-time]').forEach(b=>b.onclick=()=>{
+  key=b.dataset.time;overlay.hidden=false;document.body.style.overflow='hidden';fill(f.elements[key].value);
+ });
  $('userTimeCancel').onclick=close;
- $('userTimeDone').onclick=()=>{if(key){f.elements[key].value=wheels.Year.value+'-'+pad(wheels.Month.value)+'-'+pad(wheels.Day.value)+'T'+pad(wheels.Hour.value)+':'+pad(wheels.Minute.value);syncTimeButtons()}close()};
+ $('userTimeDone').onclick=()=>{
+  if(key){const y=value('Year'),mo=value('Month'),d=Math.min(value('Day'),new Date(y,mo,0).getDate()),h=value('Hour'),mi=value('Minute');f.elements[key].value=y+'-'+pad(mo)+'-'+pad(d)+'T'+pad(h)+':'+pad(mi);syncTimeButtons()}
+  close();
+ };
  $('userTimeClear').onclick=()=>{if(key){f.elements[key].value='';syncTimeButtons()}close()};
  $('userTimeNow').onclick=()=>fill(nowMoscow());
  overlay.onclick=e=>{if(e.target===overlay)close()};
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)close()});
 }
 function init(){
  const panel=$('driverPanel');if(!panel||$('userSpeedManager'))return;
@@ -66,7 +92,7 @@ function init(){
  <p class="small">Если срок неизвестен, запись сохраняется как непроверенная и не считается действующей.</p></div>
  <div class="userTimeOverlay" id="userTimeOverlay" hidden><div class="userTimeSheet">
  <div class="userTimeHead"><button type="button" id="userTimeCancel">Отмена</button><b>Дата и время · МСК</b><button type="button" id="userTimeDone">Готово</button></div>
- <div class="userTimeWheels"><label>День<select id="userWheelDay"></select></label><label>Месяц<select id="userWheelMonth"></select></label><label>Год<select id="userWheelYear"></select></label><label>Час<select id="userWheelHour"></select></label><label>Мин<select id="userWheelMinute"></select></label></div>
+ <div class="userWheelLabels"><span>День</span><span>Месяц</span><span>Год</span><span>Час</span><span>Мин</span></div><div class="userWheelBody"><div class="userWheelFocus"></div><div class="userWheelCol" id="userWheelDay"></div><div class="userWheelCol" id="userWheelMonth"></div><div class="userWheelCol" id="userWheelYear"></div><div class="userWheelCol" id="userWheelHour"></div><div class="userWheelCol" id="userWheelMinute"></div></div>
  <div class="userTimeFoot"><button type="button" id="userTimeNow">Сейчас МСК</button><button type="button" id="userTimeClear">Без времени</button></div></div></div>
  <button type="submit" class="primary">Сохранить запись</button><button type="button" id="userClearForm">Очистить форму</button><p id="userSpeedStatus" role="status"></p></form>
  <div class="row"><button id="userSpeedExport">Резервная копия JSON</button><label class="userImport">Импорт JSON<input type="file" id="userSpeedImport" accept="application/json,.json"></label></div>
