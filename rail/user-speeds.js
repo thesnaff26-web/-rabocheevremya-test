@@ -215,7 +215,7 @@ function render(el,r,currentRoute,cb,position){
  if(!route)return;
  const manualPreview=el.id==='driverChart'&&typeof document!=='undefined'&&document.getElementById('driverMode')?.textContent?.includes('Ручной');
  const items=records.filter(a=>a.routeId===route.id&&shown[a.type]&&
-  (a.type==='permanent'?(a.category==='all'||permanentVisible[a.category]===true):(a.category==='all'||a.category===category))&&
+  (a.type==='permanent'?(a.category==='all'?Object.values(permanentVisible).some(Boolean):permanentVisible[a.category]===true):(a.category==='all'||a.category===category))&&
   (active(a)||manualPreview));
  const n=document.createElement('div');n.className='userSpeedOverlay';n.setAttribute('aria-hidden','true');
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const w=Math.max(260,el.clientWidth||320);svg.setAttribute('viewBox','0 0 '+w+' 130');svg.setAttribute('preserveAspectRatio','none');n.append(svg);
@@ -225,7 +225,10 @@ function render(el,r,currentRoute,cb,position){
  const rows={passenger:18,freight:39,empty:60,all:80,temporary:99,tp:120};
  const labels={passenger:[],freight:[],empty:[],all:[],temporary:[]};
  for(const line of [30,51,72,91,112])make('line',{x1:0,y1:line,x2:w,y2:line,stroke:'#658198','stroke-opacity':.22,'stroke-width':.8});
- for(const a of items){
+ const expanded=items.flatMap(a=>a.type==='permanent'&&a.category==='all'
+  ?['passenger','freight','empty'].filter(k=>permanentVisible[k]).map(k=>({...a,category:k}))
+  :[a]);
+ for(const a of expanded){
   if(a.type==='tp'){
    for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){
     const cx=x(m);if(cx<0||cx>w)continue;
