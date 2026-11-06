@@ -1,7 +1,7 @@
-const CACHE = 'rabochee-vremya-v88-temporary-only-profile-20261107';
+const CACHE = 'rabochee-vremya-v89-fresh-map-interface-20261107';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
-const RAIL = ['./track-profile.html', './privacy.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/user-speeds.js', './rail/speed-import.js', './rail/driver-profile.css'];
+const RAIL = ['./track-profile.html', './privacy.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/user-speeds.js', './rail/driver-profile.css'];
 const INDEX = './index.html';
 
 async function fetchFresh(input, timeoutMs = 5000, consume = false) {
@@ -41,12 +41,29 @@ self.addEventListener('install', event => {
         if (response.ok && response.type === 'basic') await cache.put(path, response);
       } catch (_) {}
     }));
-    // Require a complete module cache before activating; leave the old worker on failure.
-    await Promise.all(RAIL.map(async path => {
-      const response = await fetchFresh(path, path.endsWith('.geojson') ? 60000 : 5000, path.endsWith('.geojson'));
-      if (!response.ok || response.type !== 'basic') throw new Error('Rail asset unavailable');
+    // Keep essential program modules fresh. The large geometry asset must not
+    // block UI fixes indefinitely on mobile: preserve its previous offline copy.
+    const previous = (await caches.keys()).filter(k => k.startsWith(PREFIX) && k !== CACHE);
+    async function previousAsset(path) {
+      for (const key of previous.slice().reverse()) {
+        const hit = await (await caches.open(key)).match(path);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    const required = RAIL.filter(p => !p.endsWith('.geojson'));
+    await Promise.all(required.map(async path => {
+      const response = await fetchFresh(path, 8000);
+      if (!response.ok || response.type !== 'basic') throw new Error('Required rail module unavailable: ' + path);
       await cache.put(path, response);
     }));
+    const geometryPath = './rail/route-geometry.geojson';
+    let geometry = await previousAsset(geometryPath);
+    if (!geometry) try {
+      const fresh = await fetchFresh(geometryPath, 12000);
+      if (fresh.ok && fresh.type === 'basic') geometry = fresh;
+    } catch (_) {}
+    if (geometry) await cache.put(geometryPath, geometry);
     await self.skipWaiting();
   })());
 });
@@ -85,15 +102,14 @@ self.addEventListener('fetch', event => {
   }
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
-      const cached = await cachedIndex();
+      const cache = await caches.open(CACHE);
+      const pagePath = url.pathname.endsWith('/track-profile.html') ? './track-profile.html' : INDEX;
+      const cached = await cache.match(pagePath) || (pagePath === INDEX ? await cachedIndex() : null);
       if (cached) {
         event.waitUntil((async () => {
           try {
             const response = await fetchFresh(request);
-            if (response.ok && response.type === 'basic') {
-              const cache = await caches.open(CACHE);
-              await cache.put(INDEX, response);
-            }
+            if (response.ok && response.type === 'basic') await cache.put(pagePath, response);
           } catch (_) {}
         })());
         return cached;
@@ -102,7 +118,7 @@ self.addEventListener('fetch', event => {
         const response = await fetchFresh(request);
         if (response.ok && response.type === 'basic') {
           const cache = await caches.open(CACHE);
-          event.waitUntil(cache.put(INDEX, response.clone()));
+          event.waitUntil(cache.put(url.pathname.endsWith('/track-profile.html') ? './track-profile.html' : INDEX, response.clone()));
         }
         return response;
       } catch (_) {
