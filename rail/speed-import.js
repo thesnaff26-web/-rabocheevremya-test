@@ -376,7 +376,7 @@ async function du61Photo(file){
    if(i===2)await worker.setParameters({tessedit_char_whitelist:'0123456789'});
    const scan=await withTimeout(worker.recognize(crop),60000,'Распознавание '+reg.title);
    text+='\n--- '+reg.title+' ---\n'+(scan.data.text||'')+'\n';
-   parts.push(du61Rows(scan,Math.round(sy*cropScale)));
+   parts.push(du61Rows(scan,0).map(row=>({...row,y:sy+row.y/cropScale})));
    crop.width=0;crop.height=0;
   }
   canvas.width=0;canvas.height=0;
