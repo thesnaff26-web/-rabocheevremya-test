@@ -1,4 +1,4 @@
-const CACHE = 'rabochee-vremya-v68-manual-route-profiles-20261106';
+const CACHE = 'rabochee-vremya-v69-permanent-categories-audit-20261106';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const RAIL = ['./track-profile.html', './privacy.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/user-speeds.js', './rail/speed-import.js', './rail/driver-profile.css'];
