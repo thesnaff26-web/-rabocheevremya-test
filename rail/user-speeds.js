@@ -8,7 +8,7 @@ function valid(a){return a&&typeof a.id==='string'&&typeof a.routeId==='string'&
 function persist(){localStorage.setItem(KEY,JSON.stringify(records));rerender();list();}
 function metres(km,pk){const k=Number(km),p=Number(pk);if(!Number.isInteger(k)||!Number.isInteger(p)||p<1||p>10||k<5000||k>9000)throw Error('Проверьте километр и пикет (1–10)');return k*1000+(p-1)*100;}
 function stamp(s){if(!s||typeof s!=='string')return null;const n=Date.parse(s+':00+03:00');return Number.isFinite(n)?n:null;}
-function status(a){if(a.type==='permanent')return 'active';if(!a.begin&&!a.endTime)return 'unverified';const now=Date.now(),begin=stamp(a.begin),end=a.untilCancel?null:stamp(a.endTime);if(begin!==null&&now<begin)return 'upcoming';if(end!==null&&now>end)return 'expired';return 'active';}
+function status(a){if(a.type==='permanent')return 'active';if(!a.begin||(!a.untilCancel&&!a.endTime))return 'unverified';const now=Date.now(),begin=stamp(a.begin),end=a.untilCancel?null:stamp(a.endTime);if(begin!==null&&now<begin)return 'upcoming';if(end!==null&&now>end)return 'expired';return 'active';}
 function active(a){return status(a)==='active';}
 function nowMoscow(){return new Date(Date.now()+3*3600000).toISOString().slice(0,16);}
 function statusLabel(a){const s=status(a);return s==='upcoming'?'Ещё не началось (МСК)':s==='expired'?'Срок истёк (МСК)':s==='unverified'?'Время не указано — проверьте':'Действует по времени (МСК)';}
