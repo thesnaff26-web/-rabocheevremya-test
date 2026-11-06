@@ -418,7 +418,9 @@ function du61DetectGrid(canvas){
   const hi=Math.min(w-5,Math.round((guess+.052)*w));
   const found=[];
   for(let x=lo;x<=hi;x++)found.push({x,s:verticalScore(x)});
-  found.sort((a,b)=>b.s-a.s);
+  // A real ruling line persists near its expected column; penalize stray
+  // text strokes farther away (especially with folded or rotated pages).
+  found.sort((a,b)=>(b.s-Math.abs(b.x/w-guess)*.62)-(a.s-Math.abs(a.x/w-guess)*.62));
   const best=found[0];
   dividers.push(best?.x/w||guess);scores.push(best?.s||0);
  }
