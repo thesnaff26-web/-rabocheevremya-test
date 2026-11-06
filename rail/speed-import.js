@@ -462,7 +462,11 @@ async function saveDrafts(){
   const result=ctx.save(rows);
   status('Сохранено '+result.added+' записей; дубликатов пропущено: '+result.duplicates+'.');
   $('speedImportConfirm').checked=false;
-  clearImportDrafts();
+  // Keep unchecked drafts (normally errors) for continued review after saving good rows.
+  const all=[...$('speedImportDrafts').querySelectorAll('.speedImportDraft')];
+  for(const card of all)if(card.querySelector('.impSelected')?.checked)card.remove();
+  if(!$('speedImportDrafts').querySelector('.speedImportDraft'))clearImportDrafts();
+  else {reviewTab='review';refreshReviewTabs();showCoverage();status('Сохранено '+result.added+' записей, пропущено дубликатов: '+result.duplicates+'. Остальные строки остались на проверку.')}
  }catch(e){status(e.message,true)}
 }
 async function handleFile(file){
@@ -526,7 +530,7 @@ function setup(options){
    refreshReviewTabs();showCoverage();
   }
  };
- $('speedImportDrafts').addEventListener('input',draftChange);
+ // Reclassify after a field is committed (blur/change), not after every digit.
  $('speedImportDrafts').addEventListener('change',draftChange);
 }
 function setTab(tab){
