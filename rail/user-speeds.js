@@ -2,6 +2,10 @@
 'use strict';
 // User-managed, offline-only rail speed annotations. No operational values are inferred.
 const KEY='rail-user-speeds-v1', $=id=>document.getElementById(id);
+const VIS_KEY='rail-user-speed-visible-categories-v1';
+const PERMANENT_COLORS={passenger:'#60a5fa',freight:'#fbbf24',empty:'#c4b5fd',all:'#f1f5f9'};
+let permanentVisible={passenger:true,freight:true,empty:true};
+try{const saved=JSON.parse(localStorage.getItem(VIS_KEY)||'null');if(saved&&typeof saved==='object')for(const k of ['passenger','freight','empty'])if(typeof saved[k]==='boolean')permanentVisible[k]=saved[k]}catch(_){}
 let records=[],route=null,category='freight',selectedTab='permanent',shown={permanent:true,temporary:true,tp:true},lastPosition=null,rerender=()=>{};
 try { const a=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(a))records=a.filter(valid); } catch(e){console.warn('Скорости: база недоступна',e);}
 function valid(a){return a&&typeof a.id==='string'&&typeof a.routeId==='string'&&['permanent','temporary','tp'].includes(a.type)&&Number.isFinite(a.start)&&(a.type==='tp'?(Number.isFinite(a.lower)&&Number.isFinite(a.raise)):((a.end==null||Number.isFinite(a.end))&&Number.isFinite(a.speed)&&a.speed>0));}
@@ -118,7 +122,12 @@ function init(){
  const wrap=document.createElement('details');wrap.className='card';wrap.id='userSpeedManager';wrap.innerHTML=`<summary>Скорости и предупреждения · мои данные</summary>
  <p class="small">По умолчанию скорости отсутствуют. Данные хранятся на этом устройстве и не заменяют действующие официальные предупреждения. Время — только МСК.</p>
  <div class="userSpeedOptions"><label><input id="userShowPerm" type="checkbox" checked> Постоянные</label><label><input id="userShowTemp" type="checkbox" checked> Временные</label><label><input id="userShowTp" type="checkbox" checked> Токоприёмники</label></div>
- <label>Категория поезда для профиля<select id="userSpeedCategory"><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>
+ <fieldset class="userPermanentFilters"><legend>Постоянные скорости на карте</legend>
+<label><input id="userPermPassenger" type="checkbox" data-perm-category="passenger"> <span class="permanentSwatch" style="--speed-color:#60a5fa"></span> Пассажирские</label>
+<label><input id="userPermFreight" type="checkbox" data-perm-category="freight"> <span class="permanentSwatch" style="--speed-color:#fbbf24"></span> Грузовые</label>
+<label><input id="userPermEmpty" type="checkbox" data-perm-category="empty"> <span class="permanentSwatch" style="--speed-color:#c4b5fd"></span> Порожние</label>
+<p class="small">Галочки только скрывают или показывают скорости. Записи не удаляются. Цвета условные.</p></fieldset>
+<label>Категория для временных предупреждений и ТП<select id="userSpeedCategory"><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>
  <div class="userSpeedTabs" id="userSpeedTabs" role="tablist" aria-label="Разделы скоростей и предупреждений">
  <button type="button" role="tab" data-tab="permanent" aria-selected="true"><span>Постоянные скорости</span><span class="userSpeedCount">0</span></button>
  <button type="button" role="tab" data-tab="temporary" aria-selected="false"><span>Временные предупреждения</span><span class="userSpeedCount">0</span></button>
@@ -159,6 +168,10 @@ function init(){
  f.onsubmit=e=>{e.preventDefault();try{if(!route)throw Error('Сначала выберите путь');const type=f.elements.kind.value,start=metres(f.elements.km1.value,f.elements.pk1.value),end=type==='tp'?metres(f.elements.tpKm2.value,f.elements.tpPk2.value):(f.elements.km2.value!==''&&f.elements.pk2.value!==''?metres(f.elements.km2.value,f.elements.pk2.value):null),raise=type==='tp'?metres(f.elements.km3.value,f.elements.pk3.value):null;if(type!=='tp'&&(f.elements.km2.value!==''||f.elements.pk2.value!=='')&&end===null)throw Error('Заполните обе границы конца или оставьте их пустыми');const speed=type==='tp'?null:Number(f.elements.speed.value);if(type!=='tp'&&!(speed>=1&&speed<=200))throw Error('Неверная скорость');if(type!=='tp'&&end!==null&&start===end)throw Error('Укажите разные границы');if(type==='tp'&&(new Set([start,end,raise]).size!==3))throw Error('Укажите три разные точки');if(type==='tp'&&!((end-start)*route.direction>0&&(raise-end)*route.direction>0))throw Error('Точки ТП должны идти последовательно по выбранному направлению');const begin=f.elements.begin.value,endTime=f.elements.endTime.value,untilCancel=f.elements.untilCancel.checked;if(type!=='permanent'&&endTime&&!begin)throw Error('Для времени окончания укажите начало действия МСК');if(type!=='permanent'&&!untilCancel&&begin&&endTime&&stamp(endTime)<stamp(begin))throw Error('Конец раньше начала');const id=f.elements.uid.value||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2));const a={id,routeId:route.id,type,category:f.elements.train.value,start,end:type==='tp'?undefined:end,lower:type==='tp'?end:undefined,raise,speed,pole1:f.elements.pole1.value,pole2:f.elements.pole2.value,pole3:f.elements.pole3.value,begin:type==='permanent'?'':begin,endTime:type==='permanent'?'':(untilCancel?'':endTime),untilCancel:type==='permanent'?false:untilCancel};records=records.filter(x=>x.id!==id);records.push(a);persist();clear();$('userSpeedStatus').textContent='Сохранено офлайн';}catch(err){$('userSpeedStatus').textContent=err.message;}};
  for(const [id,k] of [['userShowPerm','permanent'],['userShowTemp','temporary'],['userShowTp','tp']])$(id).onchange=e=>{shown[k]=e.target.checked;rerender()};
  $('userSpeedCategory').onchange=e=>{category=e.target.value;rerender()};
+ for(const input of wrap.querySelectorAll('[data-perm-category]')){
+  input.checked=permanentVisible[input.dataset.permCategory];
+  input.onchange=()=>{permanentVisible[input.dataset.permCategory]=input.checked;try{localStorage.setItem(VIS_KEY,JSON.stringify(permanentVisible))}catch(_){}rerender()};
+ }
  for(const [id,k] of [['userResetPerm','permanent'],['userResetTemp','temporary']])$(id).onclick=()=>{if(confirm('Удалить все '+(k==='permanent'?'постоянные скорости':'временные предупреждения')+' на этом устройстве?')){records=records.filter(a=>k==='permanent'?a.type!=='permanent':a.type==='permanent');persist()}};
  $('userSpeedExport').onclick=()=>{const blob=new Blob([JSON.stringify({format:'rail-user-speeds-v1',records},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='rail-speeds-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
  $('userSpeedImport').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;const data=JSON.parse(await file.text());if(data.format!=='rail-user-speeds-v1'||!Array.isArray(data.records)||!data.records.every(valid))throw Error('Неподдерживаемая резервная копия');if(!confirm('Добавить '+data.records.length+' записей из копии? Существующие не будут удалены.'))return;const known=new Set(records.map(x=>x.id));records.push(...data.records.filter(x=>!known.has(x.id)));persist();}catch(err){alert('Ошибка импорта: '+err.message)}finally{e.target.value=''}};
@@ -201,43 +214,55 @@ function render(el,r,currentRoute,cb,position){
  if(el.id==='driverChart')distanceInfo(position);
  if(!route)return;
  const manualPreview=el.id==='driverChart'&&typeof document!=='undefined'&&document.getElementById('driverMode')?.textContent?.includes('Ручной');
- const items=records.filter(a=>a.routeId===route.id&&shown[a.type]&&(a.category==='all'||a.category===category)&&(active(a)||manualPreview));
+ const items=records.filter(a=>a.routeId===route.id&&shown[a.type]&&
+  (a.type==='permanent'?(a.category==='all'||permanentVisible[a.category]===true):(a.category==='all'||a.category===category))&&
+  (active(a)||manualPreview));
  const n=document.createElement('div');n.className='userSpeedOverlay';n.setAttribute('aria-hidden','true');
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const w=Math.max(260,el.clientWidth||320);svg.setAttribute('viewBox','0 0 '+w+' 130');svg.setAttribute('preserveAspectRatio','none');n.append(svg);
  const NS='http://www.w3.org/2000/svg',make=(tag,attrs,str)=>{const node=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,v);if(str!=null)node.textContent=str;svg.append(node)};
- // Two fixed rows: speed value never changes vertical position.
- // Permanent speeds occupy the upper row; temporary speeds occupy the lower row.
+ // Fixed vertical rows for each permanent train category plus one temporary row.
  const x=m=>(m-r.start)/route.direction/r.span*w;
- const speedY=type=>type==='permanent'?34:89;
- const yEnd=type=>type==='permanent'?52:108;
- const labels={permanent:[],temporary:[]};
- make('line',{x1:0,y1:55,x2:w,y2:55,stroke:'#658198','stroke-opacity':.35,'stroke-width':1});
- make('line',{x1:0,y1:110,x2:w,y2:110,stroke:'#658198','stroke-opacity':.35,'stroke-width':1});
+ const rows={passenger:18,freight:39,empty:60,all:80,temporary:99,tp:120};
+ const labels={passenger:[],freight:[],empty:[],all:[],temporary:[]};
+ for(const line of [30,51,72,91,112])make('line',{x1:0,y1:line,x2:w,y2:line,stroke:'#658198','stroke-opacity':.22,'stroke-width':.8});
  for(const a of items){
- if(a.type==='tp'){for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){const cx=x(m);if(cx<0||cx>w)continue;make('circle',{cx,cy:118,r:11,fill:active(a)?color:'#8493a3','fill-opacity':active(a)?1:.65});make('text',{x:cx,y:122,'text-anchor':'middle','font-size':14,'font-weight':800,fill:'#081321'},t)}continue}
- const x1=x(a.start),x2=a.end==null?x1:x(a.end),left=Math.max(0,Math.min(x1,x2)),right=Math.min(w,Math.max(x1,x2));if(right<=left&&a.end!=null)continue;if(a.end==null&&(x1<0||x1>w))continue;const sy=speedY(a.type),isActive=active(a),color=!isActive?'#94a3b8':a.type==='permanent'?'#f1f5f9':'#fb7185';
- if(a.end!=null){make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':3,...(!isActive?{'stroke-dasharray':'5 4'}:{})});for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:yEnd(a.type),stroke:color,'stroke-width':1,'stroke-opacity':.42});}else make('circle',{cx:x1,cy:sy,r:5,fill:color});
- labels[a.type].push({at:a.end==null?x1:(left+right)/2,y:sy-7,color,value:String(a.speed)});
- if(!isActive&&right-left>70)make('text',{x:(left+right)/2,y:Math.min(yEnd(a.type)-1,sy+16),'text-anchor':'middle','font-size':10,fill:'#cbd5e1'},status(a)==='upcoming'?'ПОЗЖЕ':status(a)==='unverified'?'БЕЗ СРОКА':'ИСТЕКЛО');
- }
- // Arrange labels along each row without stacking them vertically.
- // Small horizontal leaders preserve the actual location of each speed segment.
- for(const group of Object.values(labels)){
-  if(!group.length)continue;
-  group.sort((a,b)=>a.at-b.at);
-  const gap=Math.max(25,Math.min(42,(w-24)/Math.max(1,group.length-1)));
-  const margin=Math.max(14,gap/2);
-  let previous=-Infinity;
-  for(let i=0;i<group.length;i++){
-   const item=group[i],remaining=group.length-i-1;
-   const target=Math.max(margin,Math.min(w-margin,item.at));
-   item.labelX=Math.max(previous+gap,Math.min(target,w-margin-remaining*gap));
-   previous=item.labelX;
+  if(a.type==='tp'){
+   for(const [m,color,t] of [[a.start,'#facc15','П'],[a.lower,'#fb7185','О'],[a.raise,'#4ade80','↑']]){
+    const cx=x(m);if(cx<0||cx>w)continue;
+    make('circle',{cx,cy:120,r:8,fill:active(a)?color:'#8493a3','fill-opacity':active(a)?1:.65});
+    make('text',{x:cx,y:123,'text-anchor':'middle','font-size':11,'font-weight':800,fill:'#081321'},t);
+   }
+   continue;
   }
-  const fontSize=gap<32?16:20;
-  for(const item of group){
-   if(Math.abs(item.at-item.labelX)>4)make('line',{x1:item.at,y1:item.y+7,x2:item.labelX,y2:item.y+7,stroke:item.color,'stroke-opacity':.55,'stroke-width':1});
-   make('text',{x:item.labelX,y:item.y,'text-anchor':'middle','font-size':fontSize,'font-weight':900,fill:item.color,stroke:'#101d2c','stroke-width':2.5,'paint-order':'stroke'},item.value);
+  const isPerm=a.type==='permanent',group=isPerm?(a.category||'all'):'temporary';
+  if(!Object.prototype.hasOwnProperty.call(labels,group))continue;
+  const sy=rows[group],x1=x(a.start),x2=a.end==null?x1:x(a.end);
+  const left=Math.max(0,Math.min(x1,x2)),right=Math.min(w,Math.max(x1,x2));
+  if(a.end!=null&&right<=left)continue;
+  if(a.end==null&&(x1<0||x1>w))continue;
+  const isActive=active(a);
+  const color=!isActive?'#94a3b8':isPerm?PERMANENT_COLORS[group]:'#fb7185';
+  if(a.end!=null){
+   make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':2.5,...(!isActive?{'stroke-dasharray':'5 4'}:{})});
+   for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:sy+7,stroke:color,'stroke-width':1,'stroke-opacity':.45});
+  }else make('circle',{cx:x1,cy:sy,r:4,fill:color});
+  labels[group].push({at:a.end==null?x1:(left+right)/2,y:sy-3,color,value:String(a.speed)});
+ }
+ // Keep numerical labels at a fixed vertical level, spread nearby labels horizontally.
+ for(const group of Object.values(labels)){
+  group.sort((a,b)=>a.at-b.at);
+  if(!group.length)continue;
+  const labelGap=28;
+  const maxLabels=Math.max(1,Math.floor((w-18)/labelGap));
+  // Dense sections show each line but not an unreadable stack of overlapping digits.
+  const visible=group.length<=maxLabels?group:group.filter((_,i)=>i%Math.ceil(group.length/maxLabels)===0);
+  let prev=-Infinity;
+  for(const item of visible){
+   const px=Math.max(13,Math.min(w-13,item.at));
+   const labelX=Math.min(w-13,Math.max(px,prev+labelGap));
+   prev=labelX;
+   if(Math.abs(labelX-item.at)>5)make('line',{x1:item.at,y1:item.y+3,x2:labelX,y2:item.y+3,stroke:item.color,'stroke-opacity':.5});
+   make('text',{x:labelX,y:item.y,'text-anchor':'middle','font-size':17,'font-weight':900,fill:item.color,stroke:'#101d2c','stroke-width':2,'paint-order':'stroke'},item.value);
   }
  }
  el.append(n);
