@@ -363,11 +363,12 @@ function du61RecoveryDrafts(locationRows,route){
  }
  return drafts;
 }
-function du61WholePhotoRows(result,width){
+function du61WholePhotoRows(result,width,dividers){
  const words=result?.data?.words||[];
  if(!words.length)return null;
+ const edges=Array.isArray(dividers)&&dividers.length>=3?dividers:[.365,.505,.59];
  const ranges=[
-  {x0:.065,x1:.365},{x0:.365,x1:.505},{x0:.505,x1:.61}
+  {x0:.07,x1:edges[0]},{x0:edges[0],x1:edges[1]},{x0:edges[1],x1:edges[2]}
  ];
  return ranges.map(range=>{
   const source=words.filter(w=>{
@@ -495,7 +496,7 @@ async function du61Photo(file){
    status('ДУ-61: дополнительная проверка по полному снимку…');
    await worker.setParameters({tessedit_char_whitelist:'',tessedit_pageseg_mode:'11'});
    const full=await withTimeout(worker.recognize(canvas),60000,'Распознавание полного ДУ-61');
-   const columns=du61WholePhotoRows(full,canvas.width);
+   const columns=du61WholePhotoRows(full,canvas.width,layout.dividers);
    if(columns){
     const extra=du61DraftFromColumns(columns[2],columns[0],columns[1]);
     if(extra.drafts.length>outcome.drafts.length)outcome=extra;
