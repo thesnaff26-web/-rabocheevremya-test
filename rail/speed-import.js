@@ -109,7 +109,7 @@ function tableFromOcrText(text,section){
  }
  return {drafts,unresolved};
 }
-function tableFromPdfItems(items,pageHeight){
+function tableFromPdfItems(items,pageHeight,pageWidth=595){
  const rows=[];
  for(const item of items||[]){
   const tr=item.transform||[],str=String(item.str||'').trim();
@@ -125,17 +125,17 @@ function tableFromPdfItems(items,pageHeight){
  for(const row of rows.sort((a,b)=>a.y-b.y)){
   for(const side of ['left','right']){
    // Station speed table may start above y=650 depending on PDF page scale.
-   const cells=row.items.filter(it=>side==='left'?it.x<205:it.x>=428);
+   const cells=row.items.filter(it=>side==='left'?it.x/pageWidth<.34:it.x/pageWidth>=.66);
    if(!cells.length)continue;
-   const location=cells.filter(it=>side==='left'?it.x<108:it.x<527)
+   const location=cells.filter(it=>side==='left'?it.x/pageWidth<.185:it.x/pageWidth<.855)
     .sort((a,b)=>a.x-b.x).map(it=>it.str).join(' ').trim();
    const range=stationlessRange(location),boundary=stationBoundary(location);
    const slots=side==='left'
-     ?[{category:'passenger',from:109,to:134},{category:'freight',from:135,to:162},{category:'empty',from:164,to:203}]
-     :[{category:'passenger',from:528,to:547},{category:'freight',from:548,to:569},{category:'empty',from:570,to:597}];
+     ?[{category:'passenger',from:.185,to:.230},{category:'freight',from:.230,to:.272},{category:'empty',from:.272,to:.34}]
+     :[{category:'passenger',from:.855,to:.90},{category:'freight',from:.90,to:.947},{category:'empty',from:.947,to:1.02}];
    const speeds={};
    for(const col of slots){
-    const token=cells.filter(it=>it.x>=col.from&&it.x<col.to).map(it=>it.str).join('').trim();
+    const token=cells.filter(it=>it.x/pageWidth>=col.from&&it.x/pageWidth<col.to).map(it=>it.str).join('').trim();
     if(/^\d{1,3}$/.test(token)&&+token>=1&&+token<=200)speeds[col.category]=+token;
    }
    // Both three-category tables require all three clearly read speeds.
@@ -191,7 +191,7 @@ async function pdfText(file){
   status('Читаю PDF: страница '+i+' из '+pageLimit);
   const p=await withTimeout(doc.getPage(i),12000,'Открытие страницы PDF');
   const tc=await withTimeout(p.getTextContent(),12000,'Чтение таблицы PDF'),items=tc.items||[];
-  if(ctx?.tab==='permanent'){tableRows.push(...tableFromPdfItems(items,p.view[3]-p.view[1]));unresolved.push(...(tableFromPdfItems.lastUnresolved||[]))}
+  if(ctx?.tab==='permanent'){tableRows.push(...tableFromPdfItems(items,p.view[3]-p.view[1],p.view[2]-p.view[0]));unresolved.push(...(tableFromPdfItems.lastUnresolved||[]))}
   let y=null;
   for(const item of items){const yy=Math.round(item.transform?.[5]||0);if(y!==null&&Math.abs(yy-y)>3)text+='\n';text+=String(item.str||'')+' ';y=yy}
   text+='\n';
