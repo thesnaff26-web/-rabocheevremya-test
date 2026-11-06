@@ -341,13 +341,26 @@ function showCoverage(){
  lines.push('Пробел не означает отсутствие ограничений. Ранее сохранённые записи не учтены. Сверьте документ перед сохранением.');
  el.textContent=lines.join('\n');
 }
+function draftProblems(a,route){
+ const out=[];
+ const start=Number(a.km1)*1000+(Number(a.pk1)-1)*100;
+ const end=a.km2!==''&&a.pk2!==''?Number(a.km2)*1000+(Number(a.pk2)-1)*100:null;
+ if(!route)return out;
+ if(!Number.isFinite(start)||start<route.start||start>=route.end)out.push('начало вне выбранного маршрута');
+ if(end!==null){
+  if(!Number.isFinite(end)||end<route.start||end>route.end)out.push('конец вне выбранного маршрута');
+  if((end-start)*route.direction<=0)out.push('границы против направления движения');
+ }else out.push('отсутствует конечная граница — отображается только точка');
+ return out;
+}
 function showDrafts(){
  const list=$('speedImportDrafts');if(!list)return;
  list.replaceChildren();
  if(!candidates.length){list.innerHTML='<p>Скорости не найдены автоматически. Для таблиц PDF используйте оригинальный цифровой файл. Можно исправить распознанный текст или добавить строку вручную.</p>';showCoverage();return}
  for(let i=0;i<candidates.length;i++){
   const a=candidates[i],card=document.createElement('div');card.className='speedImportDraft';
-  card.innerHTML='<label><input type="checkbox" class="impSelected" checked> Строка '+(i+1)+' — проверить</label><div class="speedImportNumbers">'+
+  const problems=draftProblems(a,ctx.route());
+  card.innerHTML='<label><input type="checkbox" class="impSelected" '+(problems.some(p=>p.includes('направления')||p.includes('вне выбранного'))?'':'checked')+'> Строка '+(i+1)+' — проверить</label>'+(problems.length?'<p class="speedImportWarning">'+view(problems.join('; '))+'</p>':'')+'<div class="speedImportNumbers">'+
    [['km1','Начало км'],['pk1','ПК'],['km2','Конец км'],['pk2','ПК'],['speed','км/ч']].map(([k,label])=>'<label>'+label+'<input data-field="'+k+'" type="text" inputmode="numeric" pattern="[0-9]*" value="'+view(a[k])+'"></label>').join('')+'</div>'+
    '<label>Категория<select data-field="category"><option value="">Выберите</option><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>'+
    (ctx.tab==='temporary'?'<div class="speedImportDates"><label>Начало МСК (необязательно)<input data-field="begin" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.begin)+'"></label><label>Конец МСК (необязательно)<input data-field="endTime" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.endTime)+'"></label><label><input type="checkbox" data-field="untilCancel"> До отмены</label></div>':'')+
@@ -375,6 +388,7 @@ function readDrafts(){
   const start=km1*1000+(pk1-1)*100,end=hasEnd?km2*1000+(pk2-1)*100:null;
   if(end!==null&&start===end)throw Error('Строка '+(i+1)+': одинаковые начало и конец');
   if(end!==null&&(end-start)*route.direction<=0)throw Error('Строка '+(i+1)+': границы не соответствуют направлению участка');
+  if(start<route.start||start>=route.end||(end!==null&&(end<route.start||end>route.end)))throw Error('Строка '+(i+1)+': километры за пределами выбранного участка');
   if(!['all','freight','passenger','empty'].includes(val('category')))throw Error('Строка '+(i+1)+': выберите категорию поезда после проверки документа');
   const begin=ctx.tab==='temporary'?parseMsk(val('begin')):'';
   const endTime=ctx.tab==='temporary'?parseMsk(val('endTime')):'';
