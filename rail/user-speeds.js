@@ -64,7 +64,7 @@ function list(){
  if($('userSpeedForm')&&!$('userSpeedForm').elements.uid.value&&$('userSpeedForm').elements.kind.value!==selectedTab){
   $('userSpeedForm').elements.kind.value=selectedTab;toggle();
  }
- el.innerHTML=selection.length?selection.map(a=>'<div class="userSpeedItem"><div><b>'+esc(a.type==='tp'?'ТП · 3 точки':a.speed+' км/ч')+'</b> · '+esc(a.type==='permanent'?'Постоянная':a.type==='temporary'?'Временная':'Токоприёмник')+'<small>'+esc(point(a.start))+(a.type==='tp'?' → '+point(a.lower)+' → '+point(a.raise):a.end==null?' · конец не указан':' — '+point(a.end))+' · '+esc(a.category==='all'?'Все категории':categoryName(a.category||'all'))+(a.begin?' · '+esc(prettyMsk(a.begin)):'')+(a.type==='permanent'?'':' · '+statusLabel(a))+'</small></div><div><button type="button" data-edit="'+esc(a.id)+'">Править</button><button type="button" data-del="'+esc(a.id)+'">Удалить</button></div></div>').join(''):'<p class="userSpeedEmpty">В разделе «'+esc(names[selectedTab])+'» пока нет записей.</p>';
+ el.innerHTML=selection.length?selection.map(a=>'<div class="userSpeedItem"><div><b>'+esc(a.type==='tp'?'ТП · 3 точки':a.speed+' км/ч')+'</b> · '+esc(a.type==='permanent'?'Постоянная':a.type==='temporary'?'Временная':'Токоприёмник')+'<small>'+esc(point(a.start))+(a.type==='tp'?' → '+point(a.lower)+' → '+point(a.raise):a.boundaryUnconfirmed?' · граница не уточнена · точечная отметка':a.end==null?' · конец не указан':' — '+point(a.end))+' · '+esc(a.category==='all'?'Все категории':categoryName(a.category||'all'))+(a.begin?' · '+esc(prettyMsk(a.begin)):'')+(a.type==='permanent'?'':' · '+statusLabel(a))+'</small></div><div><button type="button" data-edit="'+esc(a.id)+'">Править</button><button type="button" data-del="'+esc(a.id)+'">Удалить</button></div></div>').join(''):'<p class="userSpeedEmpty">В разделе «'+esc(names[selectedTab])+'» пока нет записей.</p>';
  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту запись?')){records=records.filter(a=>a.id!==b.dataset.del);persist()}});
  el.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.edit));
 }
@@ -275,8 +275,11 @@ function render(el,r,currentRoute,cb,position){
   if(a.end!=null){
    make('line',{x1:left,y1:sy,x2:right,y2:sy,stroke:color,'stroke-width':2.5,...(!isActive?{'stroke-dasharray':'5 4'}:{})});
    for(const xx of [left,right])make('line',{x1:xx,y1:sy,x2:xx,y2:sy+7,stroke:color,'stroke-width':1,'stroke-opacity':.45});
+  }else if(a.boundaryUnconfirmed){
+   // A one-sided imported speed is a reference marker, never a confirmed limit.
+   make('circle',{cx:x1,cy:sy,r:5.5,fill:'none',stroke:color,'stroke-width':2,'stroke-dasharray':'2 2'});
   }else make('circle',{cx:x1,cy:sy,r:4,fill:color});
-  labels[group].push({at:a.end==null?x1:(left+right)/2,y:sy-3,color,value:String(a.speed)});
+  labels[group].push({at:a.end==null?x1:(left+right)/2,y:sy-3,color,value:String(a.speed)+(a.boundaryUnconfirmed?'?':'')});
  }
  // Keep numerical labels at a fixed vertical level, spread nearby labels horizontally.
  for(const group of Object.values(labels)){
