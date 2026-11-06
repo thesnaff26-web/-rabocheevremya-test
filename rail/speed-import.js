@@ -6,11 +6,27 @@ const $=id=>document.getElementById(id);
 const MAX_FILE=18*1024*1024;
 let ctx=null,candidates=[];
 const view=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+function withTimeout(promise,ms,label){
+ return new Promise((resolve,reject)=>{
+  let finished=false;
+  const timer=setTimeout(()=>{if(!finished){finished=true;reject(Error(label+' не ответил за '+Math.round(ms/1000)+' секунд. Проверьте соединение или попробуйте ещё раз.'))}},ms);
+  Promise.resolve(promise).then(v=>{if(!finished){finished=true;clearTimeout(timer);resolve(v)}},err=>{if(!finished){finished=true;clearTimeout(timer);reject(err)}});
+ });
+}
 function script(src,globalName){
  if(root[globalName])return Promise.resolve(root[globalName]);
- const cached=document.querySelector('script[data-import-lib="'+globalName+'"]');
- if(cached)return new Promise((resolve,reject)=>{if(root[globalName])return resolve(root[globalName]);cached.addEventListener('load',()=>resolve(root[globalName]),{once:true});cached.addEventListener('error',()=>reject(Error('Не удалось загрузить '+globalName)),{once:true})});
- return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=true;s.dataset.importLib=globalName;s.onload=()=>root[globalName]?resolve(root[globalName]):reject(Error('Библиотека '+globalName+' не запустилась'));s.onerror=()=>reject(Error('Не удалось загрузить '+globalName+'. Проверьте интернет'));document.head.append(s)});
+ // A failed CDN request must not leave a permanently pending script element.
+ const existing=document.querySelector('script[data-import-lib="'+globalName+'"]');
+ if(existing&&existing.dataset.failed==='1')existing.remove();
+ return new Promise((resolve,reject)=>{
+  const s=document.querySelector('script[data-import-lib="'+globalName+'"]')||document.createElement('script');
+  let finished=false;
+  const done=(err)=>{if(finished)return;finished=true;clearTimeout(timeout);if(err){s.dataset.failed='1';s.remove();reject(err)}else resolve(root[globalName])};
+  const timeout=setTimeout(()=>done(Error('Загрузка библиотеки '+globalName+' заняла слишком много времени. Проверьте соединение и повторите попытку.')),12000);
+  s.addEventListener('load',()=>root[globalName]?done(null):done(Error('Библиотека '+globalName+' не запустилась')),{once:true});
+  s.addEventListener('error',()=>done(Error('Библиотека '+globalName+' недоступна. Проверьте интернет')),{once:true});
+  if(!s.isConnected){s.src=src;s.async=true;s.dataset.importLib=globalName;document.head.append(s)}
+ });
 }
 function parseMsk(value){
  const v=String(value||'').trim();
@@ -94,14 +110,17 @@ function tableFromPdfItems(items,pageHeight){
 }
 function status(msg,error=false){const el=$('speedImportStatus');if(el){el.textContent=msg;el.style.color=error?'#fda4af':''}}
 async function pdfText(file){
+ status('Загружаю модуль чтения PDF…');
  const pdfjs=await script('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','pdfjsLib');
  pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
- const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+ status('Читаю файл PDF…');
+ const doc=await withTimeout(pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise,16000,'Чтение PDF');
  if(doc.numPages>20)throw Error('Документ содержит более 20 страниц. Разделите PDF на части.');
  let text='',pageLimit=Math.min(doc.numPages,20),tableRows=[];
  for(let i=1;i<=pageLimit;i++){
   status('Читаю PDF: страница '+i+' из '+pageLimit);
-  const p=await doc.getPage(i),tc=await p.getTextContent(),items=tc.items||[];
+  const p=await withTimeout(doc.getPage(i),12000,'Открытие страницы PDF');
+  const tc=await withTimeout(p.getTextContent(),12000,'Чтение таблицы PDF'),items=tc.items||[];
   if(ctx?.tab==='permanent')tableRows.push(...tableFromPdfItems(items,p.view[3]-p.view[1]));
   let y=null;
   for(const item of items){const yy=Math.round(item.transform?.[5]||0);if(y!==null&&Math.abs(yy-y)>3)text+='\n';text+=String(item.str||'')+' ';y=yy}
