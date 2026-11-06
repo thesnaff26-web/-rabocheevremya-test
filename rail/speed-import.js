@@ -57,7 +57,8 @@ function rowFromLine(text){
 function extract(text){
  const lines=String(text||'').split(/\r?\n/);const found=[];
  for(const line of lines){const candidate=rowFromLine(line);if(candidate)found.push(candidate)}
- return found.slice(0,150);
+ if(found.length>600)throw Error('Найдено более 600 строк. Разделите документ на части, чтобы проверить их все без потерь.');
+ return found;
 }
 
 /* Extract actual columns from digital railway-table PDFs.
@@ -166,7 +167,7 @@ async function pdfText(file){
   for(const item of items){const yy=Math.round(item.transform?.[5]||0);if(y!==null&&Math.abs(yy-y)>3)text+='\n';text+=String(item.str||'')+' ';y=yy}
   text+='\n';
  }
- if(tableRows.length)return {text,drafts:tableRows.slice(0,300),unresolved};
+ if(tableRows.length){if(tableRows.length>600)throw Error('В PDF более 600 записей. Разделите документ на части: автоматически обрезать строки нельзя.');return {text,drafts:tableRows,unresolved}}
  if(!extract(text).length){
   // Scanned PDF pages have no embedded text. OCR a small number of pages in memory.
   const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
@@ -287,7 +288,7 @@ async function saveDrafts(){
   const result=ctx.save(rows);
   status('Сохранено '+result.added+' записей; дубликатов пропущено: '+result.duplicates+'.');
   $('speedImportConfirm').checked=false;
-  if(result.added){$('speedImportDrafts').replaceChildren();candidates=[]}
+  if(result.added){$('speedImportDrafts').replaceChildren();candidates=[];showCoverage()}
  }catch(e){status(e.message,true)}
 }
 async function handleFile(file){
