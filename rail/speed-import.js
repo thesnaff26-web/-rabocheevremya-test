@@ -316,17 +316,17 @@ function du61DraftFromColumns(speedRows,locationRows,timeRows){
   const token=sr.text.replace(/[OoОо]/g,'0').replace(/[ІI|]/g,'1').replace(/\s/g,'');
   const found=token.match(/^(?:[1-9]\d?|1[0-4]\d|150)$/);
   if(!found)continue;
-  const speed=Number(found[0]);if(speed<5||speed>150)continue;
+  const speed=Number(found[0]);if(speed<10||speed>150)continue;
   const closest=sortedLocations
    .map(row=>({...row,delta:Math.abs(sr.y-row.y)}))
    .sort((a,b)=>a.delta-b.delta)[0];
-  // Rows farther than 32px in the scaled 1600px document are ambiguous.
-  if(!closest||closest.delta>32){
+  // Only accept speed and location that share a nearby horizontal row.
+  if(!closest||closest.delta>22){
    unresolved.push('ДУ-61: скорость '+speed+' км/ч, точные км/ПК не сопоставлены со строкой');
    continue;
   }
   const atTime=timeRows.map(row=>({...row,delta:Math.abs(sr.y-row.y)})).sort((a,b)=>a.delta-b.delta)[0];
-  const timeHint=atTime&&atTime.delta<32?atTime.text:'не распознано';
+  const timeHint=atTime&&atTime.delta<26?atTime.text:'не распознано';
   drafts.push({...closest.position,speed,category:'all',begin:'',endTime:'',untilCancel:false,
    source:'ДУ-61 · '+closest.text+' | '+speed+' км/ч · время по документу: '+timeHint+' [проверить МСК]',
    stationHint:closest.position.km2===''?'ДУ-61: конец ограничения не указан':'',
@@ -353,9 +353,9 @@ async function du61Photo(file){
   const context=canvas.getContext('2d',{willReadFrequently:true});
   context.drawImage(bitmap,0,0,canvas.width,canvas.height);
   const regions=[
-   {title:'место действия',x:.105,y:.31,w:.27,h:.57},
-   {title:'время МСК',x:.375,y:.31,w:.125,h:.57},
-   {title:'скорость',x:.50,y:.31,w:.08,h:.57}
+   {title:'место действия',x:.065,y:.27,w:.300,h:.59},
+   {title:'время МСК',x:.365,y:.27,w:.132,h:.59},
+   {title:'скорость',x:.505,y:.27,w:.085,h:.59}
   ];
   let text='',parts=[];
   for(let i=0;i<regions.length;i++){
@@ -373,7 +373,7 @@ async function du61Photo(file){
    // Avoid global thresholding: the old darkening destroyed faint dot-matrix
    // characters on wrinkled DU-61 paper.
    status('ДУ-61: распознаю колонку '+reg.title+' ('+(i+1)+'/3)');
-   if(i===2)await worker.setParameters({tessedit_char_whitelist:'0123456789'});
+   if(i===2)await worker.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'11'});
    const scan=await withTimeout(worker.recognize(crop),60000,'Распознавание '+reg.title);
    text+='\n--- '+reg.title+' ---\n'+(scan.data.text||'')+'\n';
    parts.push(du61Rows(scan,0).map(row=>({...row,y:sy+row.y/cropScale})));
