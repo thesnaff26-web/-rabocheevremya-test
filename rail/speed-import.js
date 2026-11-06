@@ -84,7 +84,7 @@ function stationBoundary(raw){
 }
 
 function speedTripleFromLine(raw,section){
- const line=String(raw||'').replace(/[–—−]/g,'-').replace(/[|;]+/g,' ').replace(/\s+/g,' ').trim();
+ const line=String(raw||'').replace(/[–—−]/g,'-').replace(/[|;\[\]]+/g,' ').replace(/\s+/g,' ').trim();
  // A column-based speed table contains precisely three terminal speed cells.
  const triple=line.match(/(?:^|\s)(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})\s*$/);
  if(!triple)return null;
@@ -254,8 +254,8 @@ async function tableImageText(imageSource,worker){
  context.drawImage(imageSource,0,0,base.width,base.height);
  const doc=imageBounds(context,base.width,base.height);
  const cropPlans=[
-  {name:'По перегону',x:0,y:0,width:.50,height:1},
-  {name:'По станциям',x:.61,y:.57,width:.39,height:.43}
+  {name:'По перегону',x:0,y:0,width:.325,height:1},
+  {name:'По станциям',x:.66,y:.60,width:.34,height:.40}
  ];
  let text='',drafts=[],unresolved=[];
  for(const [i,plan] of cropPlans.entries()){
