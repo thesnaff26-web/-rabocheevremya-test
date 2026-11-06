@@ -136,3 +136,9 @@
 #userSpeedManager .userPermanentFilters p{grid-column:1/-1;margin:0;font-size:11px}
 #speedImportPanel .speedImportCoverage{white-space:pre-line;font-size:12px;line-height:1.55;padding:12px;border:1px solid #99713d;border-radius:10px;margin:12px 0;background:#29251b;color:#ffdfae;overflow-wrap:anywhere}
 @media(max-width:420px){#userSpeedManager .userPermanentFilters{grid-template-columns:1fr;gap:9px}#userSpeedManager .userPermanentFilters label{font-size:14px}}
+
+/* Speed table rows which require verification: never silently omit uncertain km/PK. */
+#speedImportPanel .speedImportUnresolved{border:1px solid #a77752;border-radius:10px;background:#2b211a;color:#ffe4c5;padding:12px;margin:10px 0;max-height:280px;overflow-y:auto;font-size:12px;line-height:1.5}
+#speedImportPanel .speedImportUnresolved[hidden]{display:none!important}
+#speedImportPanel .speedImportUnresolved ol{margin:7px 0 0;padding-left:21px}
+#speedImportPanel .speedImportUnresolved li{margin:5px 0;overflow-wrap:anywhere}
