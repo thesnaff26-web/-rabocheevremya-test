@@ -78,3 +78,13 @@
 #userSpeedManager input:not([type=checkbox]):not([type=hidden]):not([inputmode=numeric]){font-size:16px!important}
 #userSpeedManager .userTimePick{font-size:18px!important;line-height:1.3}
 #userSpeedManager .userWheelItem{font-size:20px!important}
+
+/* Three independent management tabs; display visibility checkboxes remain separate. */
+#userSpeedManager .userSpeedTabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:14px 0 12px}
+#userSpeedManager .userSpeedTabs button{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;min-width:0;min-height:78px;padding:11px 6px;border:1px solid #456078;border-radius:12px;background:#17283a;color:#dbe9f5;font-size:12px;font-weight:750;line-height:1.2;text-align:center;overflow-wrap:anywhere}
+#userSpeedManager .userSpeedTabs button.active{background:#3ad8ab;color:#06281f;border-color:#3ad8ab}
+#userSpeedManager .userSpeedTabs button:focus-visible{outline:3px solid #87d6ff;outline-offset:2px}
+#userSpeedManager .userSpeedCount{min-width:24px;padding:3px 6px;background:#ffffff1a;border-radius:99px;font-size:12px;line-height:1.2;font-variant-numeric:tabular-nums}
+#userSpeedManager .userSpeedTabs button.active .userSpeedCount{background:#06281f20}
+#userSpeedListTitle{margin-top:14px}
+@media(max-width:360px){#userSpeedManager .userSpeedTabs button{font-size:11px;padding:10px 3px;min-height:84px}}
