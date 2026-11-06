@@ -202,7 +202,7 @@ async function pdfText(file){
   const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
   const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Распознаю скан PDF: '+Math.round((m.progress||0)*100)+'%')}});
   try{
-   let scanned='';
+   let scanned='',drafts=[],unresolved=[];
    for(let i=1;i<=Math.min(doc.numPages,5);i++){
     status('Распознаю скан PDF: страница '+i+' из '+Math.min(doc.numPages,5));
     const page=await doc.getPage(i),viewport=page.getViewport({scale:1.75});
@@ -210,12 +210,17 @@ async function pdfText(file){
     canvas.width=Math.round(viewport.width);canvas.height=Math.round(viewport.height);
     const context=canvas.getContext('2d',{willReadFrequently:true});
     if(!context)throw Error('Не удаётся подготовить PDF для распознавания');
-    await page.render({canvasContext:context,viewport}).promise;
-    const result=await worker.recognize(canvas);scanned+=(result.data.text||'')+'\n';
+    await withTimeout(page.render({canvasContext:context,viewport}).promise,16000,'Отрисовка скана PDF');
+    if(ctx?.tab==='permanent'){
+     const result=await tableImageText(canvas,worker);
+     scanned+=result.text;drafts.push(...result.drafts);unresolved.push(...result.unresolved);
+    }else{
+     const result=await worker.recognize(canvas);scanned+=(result.data.text||'')+'\n';
+    }
     canvas.width=0;canvas.height=0;
    }
-   // Surface OCR text for verification, regardless of whether rows were found.
-   if(scanned.trim())return {text:scanned,drafts:[],unresolved:[]};
+   if(drafts.length>600)throw Error('Более 600 найденных скоростей в PDF, разделите документ для проверки');
+   if(scanned.trim())return {text:scanned,drafts,unresolved};
   }finally{await worker.terminate()}
  }
  if(!text.trim())throw Error('Не удалось извлечь текст из PDF. Попробуйте фотографию страницы.');
