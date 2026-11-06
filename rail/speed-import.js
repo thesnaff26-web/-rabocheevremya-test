@@ -384,6 +384,57 @@ function du61WholePhotoRows(result,width){
   return grouped.map(r=>({y:r.y,text:r.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(' ')}));
  });
 }
+
+/* Locate dotted DU-61 grid separators from the actual photograph.
+   Coordinates are normalized, making photo framing/resolution independent.
+   Uses Canvas only (zero-cost, offline-capable), no remote OCR API. */
+function du61DetectGrid(canvas){
+ const width=canvas.width,height=canvas.height;
+ const small=document.createElement('canvas');
+ small.width=Math.max(320,Math.min(900,width));
+ small.height=Math.max(320,Math.round(height*small.width/width));
+ const ct=small.getContext('2d',{willReadFrequently:true});
+ ct.drawImage(canvas,0,0,small.width,small.height);
+ const w=small.width,h=small.height,pixels=ct.getImageData(0,0,w,h).data;
+ const darkness=(x,y)=>{
+  const index=(y*w+x)*4;
+  return (pixels[index]*.299+pixels[index+1]*.587+pixels[index+2]*.114)<155;
+ };
+ const y0=Math.round(h*.27),y1=Math.round(h*.87);
+ // Long dotted rules remain narrow and distinct from ordinary words.
+ function verticalScore(x){
+  let count=0,checked=0;
+  const spread=Math.max(4,Math.round(w*.006));
+  for(let y=y0;y<y1;y+=2){
+   checked++;
+   if(darkness(x,y)&&!darkness(Math.max(0,x-spread),y)&&!darkness(Math.min(w-1,x+spread),y))count++;
+  }
+  return count/Math.max(1,checked);
+ }
+ const prior=[.365,.505,.59,.67];
+ const dividers=[],scores=[];
+ for(const guess of prior){
+  const lo=Math.max(4,Math.round((guess-.052)*w));
+  const hi=Math.min(w-5,Math.round((guess+.052)*w));
+  const found=[];
+  for(let x=lo;x<=hi;x++)found.push({x,s:verticalScore(x)});
+  found.sort((a,b)=>b.s-a.s);
+  const best=found[0];
+  dividers.push(best?.x/w||guess);scores.push(best?.s||0);
+ }
+ // Only trust a consistent monotonic group of vertical rules.
+ const ordered=dividers.every((v,i)=>i===0||v>dividers[i-1]+.04);
+ const accepted=ordered&&scores.every(v=>v>.045);
+ const x=accepted?dividers:prior;
+ small.width=0;small.height=0;
+ return {source:accepted?'detected':'fallback',scores,
+  regions:[
+   {title:'место действия',x:.07,y:.28,w:x[0]-.075,h:.61},
+   {title:'время МСК',x:x[0]+.006,y:.28,w:x[1]-x[0]-.012,h:.61},
+   {title:'скорость',x:x[1]+.007,y:.28,w:x[2]-x[1]-.014,h:.61}
+  ],
+  dividers:x};
+}
 async function du61Photo(file){
  const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Читаю ДУ-61: '+Math.round((m.progress||0)*100)+'%')}});
@@ -402,11 +453,9 @@ async function du61Photo(file){
   canvas.width=Math.round(bitmap.width*ratio);canvas.height=Math.round(bitmap.height*ratio);
   const context=canvas.getContext('2d',{willReadFrequently:true});
   context.drawImage(bitmap,0,0,canvas.width,canvas.height);
-  const regions=[
-   {title:'место действия',x:.065,y:.27,w:.300,h:.59},
-   {title:'время МСК',x:.365,y:.27,w:.132,h:.59},
-   {title:'скорость',x:.505,y:.27,w:.085,h:.59}
-  ];
+  const layout=du61DetectGrid(canvas);
+  const regions=layout.regions;
+  status(layout.source==='detected'?'ДУ-61: границы таблицы найдены':'ДУ-61: границы таблицы неуверенные, используем резервную разметку');
   let text='',parts=[];
   for(let i=0;i<regions.length;i++){
    const reg=regions[i],sx=Math.floor(canvas.width*reg.x),sy=Math.floor(canvas.height*reg.y);
@@ -458,7 +507,7 @@ async function du61Photo(file){
    }
   }
   canvas.width=0;canvas.height=0;
-  if(!outcome.drafts.length)outcome.unresolved.push('Не удалось надёжно сопоставить три колонки ДУ-61. Сфотографируйте ровно и ближе, чтобы таблица заняла большую часть кадра.');
+  if(!outcome.drafts.length)outcome.unresolved.push('Не удалось распознать строки ДУ-61. Попробуйте сфотографировать только таблицу прямо сверху, без рамок экрана.');
   return {text,drafts:outcome.drafts,unresolved:outcome.unresolved};
  }finally{if(bitmap?.close)bitmap.close();await worker.terminate()}
 }
@@ -842,5 +891,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];reviewTab='ready';showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;refreshReviewTabs();showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport,du61Location,du61DraftFromColumns,du61RecoveryDrafts};
+root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport,du61Location,du61DraftFromColumns,du61RecoveryDrafts,du61DetectGrid};
 })(typeof globalThis!=='undefined'?globalThis:this);
