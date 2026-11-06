@@ -491,34 +491,44 @@ function showDrafts(){
 }
 function handleText(){candidates=extract($('speedImportText').value);showDrafts();status('Найдено строк: '+candidates.length+'. Проверьте все значения перед сохранением.')}
 function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',category:'',begin:'',endTime:'',source:'ручная корректировка'});showDrafts();setReviewTab('review');status('Заполните новую строку и проверьте исходный документ.')}
+function validateOneDraft(card,i,route){
+ const get=k=>card.querySelector('[data-field="'+k+'"]');
+ const val=k=>get(k)?.value.trim()||'';
+ const km1=+val('km1'),pk1=+val('pk1'),km2=+val('km2'),pk2=+val('pk2'),speed=+val('speed');
+ const hasEnd=val('km2')!==''||val('pk2')!=='';
+ if(card.dataset.stationHint&&!hasEnd)throw Error('Строка '+(i+1)+': уточните станционную границу и оба поля конца');
+ if(!/^\d{4}$/.test(val('km1'))||!(pk1>=1&&pk1<=10)||!Number.isInteger(pk1)||
+   (hasEnd&&(!/^\d{4}$/.test(val('km2'))||!Number.isInteger(pk2)||pk2<1||pk2>10))||
+   !Number.isInteger(speed)||speed<1||speed>200)throw Error('Строка '+(i+1)+': проверьте км, ПК и скорость');
+ if(hasEnd&&(!val('km2')||!val('pk2')))throw Error('Строка '+(i+1)+': заполните оба поля конца');
+ const start=km1*1000+(pk1-1)*100,end=hasEnd?km2*1000+(pk2-1)*100:null;
+ if(end!==null&&start===end)throw Error('Строка '+(i+1)+': начало и конец совпадают');
+ if(end!==null&&(end-start)*route.direction<=0)throw Error('Строка '+(i+1)+': границы против направления движения');
+ if(start<route.start||start>=route.end||(end!==null&&(end<route.start||end>route.end)))throw Error('Строка '+(i+1)+': км вне выбранного участка');
+ if(!['all','freight','passenger','empty'].includes(val('category')))throw Error('Строка '+(i+1)+': выберите категорию');
+ const begin=ctx.tab==='temporary'?parseMsk(val('begin')):'';
+ const endTime=ctx.tab==='temporary'?parseMsk(val('endTime')):'';
+ const untilCancel=ctx.tab==='temporary'&&!!get('untilCancel')?.checked;
+ if(endTime&&!begin)throw Error('Строка '+(i+1)+': укажите начало действия');
+ if(begin&&endTime&&Date.parse(endTime+':00+03:00')<Date.parse(begin+':00+03:00'))throw Error('Строка '+(i+1)+': конец раньше начала');
+ return {type:ctx.tab,routeId:route.id,category:val('category'),start,end,speed,begin,endTime:untilCancel?'':endTime,untilCancel};
+}
 function readDrafts(){
  if(!ctx.route())throw Error('Сначала выберите участок и направление');
- const route=ctx.route(),out=[];
- for(const [i,card] of [...$('speedImportDrafts').querySelectorAll('.speedImportDraft')].entries()){
-  if(!card.querySelector('.impSelected').checked)continue;
-  const get=k=>card.querySelector('[data-field="'+k+'"]');
-  const val=k=>get(k)?.value.trim()||'';
-  const km1=+val('km1'),pk1=+val('pk1'),km2=+val('km2'),pk2=+val('pk2'),speed=+val('speed');
-  const hasEnd=val('km2')!==''||val('pk2')!=='';
-  if(card.dataset.stationHint&&!hasEnd)throw Error('Строка '+(i+1)+': подтвердите точную станционную границу; точечную отметку вместо ограничения сохранять нельзя');
-  if(!/^\d{4}$/.test(val('km1'))||!(pk1>=1&&pk1<=10)||!Number.isInteger(pk1)||
-    (hasEnd&&(!/^\d{4}$/.test(val('km2'))||!Number.isInteger(pk2)||pk2<1||pk2>10))||
-    !Number.isInteger(speed)||speed<1||speed>200)throw Error('Строка '+(i+1)+': проверьте км, ПК и скорость');
-  if(hasEnd&&(!val('km2')||!val('pk2')))throw Error('Строка '+(i+1)+': заполните оба поля конца');
-  const start=km1*1000+(pk1-1)*100,end=hasEnd?km2*1000+(pk2-1)*100:null;
-  if(end!==null&&start===end)throw Error('Строка '+(i+1)+': одинаковые начало и конец');
-  if(end!==null&&(end-start)*route.direction<=0)throw Error('Строка '+(i+1)+': границы не соответствуют направлению участка');
-  if(start<route.start||start>=route.end||(end!==null&&(end<route.start||end>route.end)))throw Error('Строка '+(i+1)+': километры за пределами выбранного участка');
-  if(!['all','freight','passenger','empty'].includes(val('category')))throw Error('Строка '+(i+1)+': выберите категорию поезда после проверки документа');
-  const begin=ctx.tab==='temporary'?parseMsk(val('begin')):'';
-  const endTime=ctx.tab==='temporary'?parseMsk(val('endTime')):'';
-  const untilCancel=ctx.tab==='temporary'&&!!get('untilCancel')?.checked;
-  if(endTime&&!begin)throw Error('Строка '+(i+1)+': укажите начало действия');
-  if(begin&&endTime&&Date.parse(endTime+':00+03:00')<Date.parse(begin+':00+03:00'))throw Error('Строка '+(i+1)+': конец раньше начала');
-  out.push({type:ctx.tab,routeId:route.id,category:val('category'),start,end,speed,begin,endTime:untilCancel?'':endTime,untilCancel});
+ const route=ctx.route(),rows=[],accepted=[],invalid=[];
+ const cards=[...$('speedImportDrafts').querySelectorAll('.speedImportDraft')];
+ let selected=0;
+ for(const [i,card] of cards.entries()){
+  if(!card.querySelector('.impSelected')?.checked)continue;
+  selected++;
+  try{
+   const row=validateOneDraft(card,i,route);
+   rows.push(row);accepted.push(card);
+  }catch(e){
+   invalid.push({card,message:String(e.message||e)});
+  }
  }
- if(!out.length)throw Error('Выберите хотя бы одну проверенную строку');
- return out;
+ return {rows,accepted,invalid,selected};
 }
 function clearImportDrafts(){
  candidates=[];
@@ -527,20 +537,40 @@ function clearImportDrafts(){
  const checkbox=$('speedImportConfirm');if(checkbox)checkbox.checked=false;
  for(const id of ['speedImportFile','speedImportCamera']){const el=$(id);if(el)el.value=''}
  showUnresolved([]);refreshReviewTabs();showCoverage();
+ const feedback=$('speedImportSaveFeedback');if(feedback){feedback.textContent='';feedback.hidden=true}
+}
+function saveFeedback(message,error=false){
+ const el=$('speedImportSaveFeedback');
+ if(!el)return;
+ el.hidden=false;el.textContent=message;
+ el.dataset.error=error?'true':'false';
+ el.setAttribute('role',error?'alert':'status');
 }
 async function saveDrafts(){
  try{
-  const rows=readDrafts();
-  if(!$('speedImportConfirm').checked)throw Error('Подтвердите, что сверили все выбранные строки с документом');
+  const {rows,accepted,invalid,selected}=readDrafts();
+  if(!selected)throw Error('Сначала выберите хотя бы одну запись в любой вкладке.');
+  if(!rows.length){
+   const detail=invalid.slice(0,3).map(x=>x.message).join('; ');
+   throw Error('Сохранено 0. Все '+invalid.length+' выбранных записей требуют исправления. '+detail);
+  }
+  if(!$('speedImportConfirm').checked)throw Error('Подтвердите сверку выбранных корректных записей с исходным документом.');
+  // Save only valid selected rows. Records with incomplete boundaries stay as drafts.
   const result=ctx.save(rows);
-  status('Сохранено '+result.added+' записей; дубликатов пропущено: '+result.duplicates+'.');
+  if(!result||!Number.isFinite(result.added))throw Error('Не удалось подтвердить сохранение.');
+  for(const card of accepted)card.remove();
+  for(const {card} of invalid){card.querySelector('.impSelected').checked=false}
   $('speedImportConfirm').checked=false;
-  // Keep unchecked drafts (normally errors) for continued review after saving good rows.
-  const all=[...$('speedImportDrafts').querySelectorAll('.speedImportDraft')];
-  for(const card of all)if(card.querySelector('.impSelected')?.checked)card.remove();
   if(!$('speedImportDrafts').querySelector('.speedImportDraft'))clearImportDrafts();
-  else {reviewTab='review';refreshReviewTabs();showCoverage();status('Сохранено '+result.added+' записей, пропущено дубликатов: '+result.duplicates+'. Остальные строки остались на проверку.')}
- }catch(e){status(e.message,true)}
+  else{reviewTab='review';refreshReviewTabs();showCoverage()}
+  const summary='Сохранено '+result.added+' записей. Дубликатов: '+(result.duplicates||0)+
+   '. Пропущено из-за ошибок: '+invalid.length+'.'+
+   (invalid.length?' Исправьте оставшиеся строки во вкладке «На проверку».':'');
+  status(summary);saveFeedback(summary,invalid.length>0);
+ }catch(e){
+  const msg='Сохранение не выполнено: '+(e.message||e);
+  status(msg,true);saveFeedback(msg,true);
+ }
 }
 async function handleFile(file){
  if(!file)return;
@@ -587,7 +617,7 @@ function setup(options){
  '<div class="speedImportSelectBar"><label for="speedImportSelectAll"><input type="checkbox" id="speedImportSelectAll"> Выбрать все в этой вкладке</label><span id="speedImportSelectionSummary" aria-live="polite">Выбрано 0 из 0</span></div>'+
  '<p id="speedImportReviewEmpty" class="speedImportReviewEmpty" hidden></p><div id="speedImportDrafts"></div><div id="speedImportCoverage" class="speedImportCoverage" role="status" hidden></div>'+
  '<label class="speedImportReview"><input type="checkbox" id="speedImportConfirm"> Я сверил выбранные записи с исходным документом, включая направление, км, ПК, скорости и время МСК.</label>'+
- '<button type="button" id="speedImportSave">Сохранить проверенные записи</button>';
+ '<button type="button" id="speedImportSave">Сохранить проверенные записи</button><p id="speedImportSaveFeedback" class="speedImportSaveFeedback" role="status" aria-live="polite" hidden></p>';
  form.parentNode.insertBefore(wrapper,form);
  $('speedImportCamera').onchange=e=>{handleFile(e.target.files[0]);e.target.value=''};
  $('speedImportFile').onchange=e=>{handleFile(e.target.files[0]);e.target.value=''};
