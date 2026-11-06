@@ -784,7 +784,9 @@ async function handleFile(file){
   $('speedImportText').value=result.text;
   if(result.drafts.length){
    candidates=result.drafts;showDrafts();
-   status('Найдено '+candidates.length+' скоростей. '+(result.unresolved?.length?'Не удалось определить границы '+result.unresolved.length+' строк; см. список ниже. ':'')+'Проверьте км/ПК и категории.');
+   const recovery=candidates.every(row=>row.ocrUnverified&&!row.speed);
+   status(recovery?'Ограничения автоматически не распознаны. Найдено '+candidates.length+' фрагментов км/ПК для ручного ввода во вкладке «На проверку». Скорости не определены и не сохранены.':
+    'Найдено '+candidates.length+' скоростных строк. '+(result.unresolved?.length?'Есть замечания: '+result.unresolved.length+'. ':'')+'Сверьте все значения с документом.');
   }else handleText();
   showUnresolved(result.unresolved||[]);
   if(!candidates.length)status('Распознавание завершено, но строки не определились. Проверьте текст и внесите записи вручную.',true);
