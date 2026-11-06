@@ -311,7 +311,7 @@ function du61DraftFromColumns(speedRows,locationRows,timeRows){
  const drafts=[],unresolved=[];
  const sortedLocations=locationRows.map(row=>({...row,position:du61Location(row.text)}))
   .filter(row=>row.position).sort((a,b)=>a.y-b.y);
- const dates=timeRows.filter(row=>/\b(?:\d{1,2}\s*[-:]\s*\d{1,2}(?::\d{2})?|до\s*отм|до\s*отмен)/i.test(row.text));
+ const dates=timeRows.filter(row=>/(?:\d{1,2}\s*[-:]\s*\d{1,2}(?::\d{2})?|до\s*отм|до\s*отмен)/i.test(row.text));
  const used=new Set();
  for(const sr of speedRows){
   // OCR often produces standalone numbers from table ruling and dot-matrix noise.
