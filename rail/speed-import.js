@@ -75,7 +75,28 @@ function stationlessRange(raw){
  if(b!==null&&a===b&&pk1===pk2)return null;
  return {km1:a,pk1,km2:b??'',pk2:pk2??''};
 }
-function stationKey(s){return String(s||'').toLowerCase().replace(/[^а-яёa-z0-9]/gi,'').replace(/ё/g,'е')}
+function stationKey(s){
+ return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/(?:станция|ст\.)/g,'')
+  .replace(/[^а-яa-z0-9]/gi,'');
+}
+function stationVerifiedBoundary(station,route){
+ // Future corridors may include explicitly surveyed stop-boundary coordinates.
+ // NEVER use the approximate position of a station SVG label as a speed boundary.
+ const entry=(route?.verifiedStationBoundaries||[]).find(a=>a?.verified===true&&stationKey(a.name)===stationKey(station));
+ if(!entry||!Number.isInteger(entry.km)||!Number.isInteger(entry.pk)||entry.pk<1||entry.pk>10)return null;
+ return {km:entry.km,pk:entry.pk};
+}
+function draftFromBoundary(boundary,category,speed,section,location,route){
+ const known=boundary.numeric;
+ const anchored=stationVerifiedBoundary(boundary.station,route);
+ const first=boundary.kind==='toStation'?known:anchored;
+ const last=boundary.kind==='toStation'?anchored:known;
+ return {km1:first?.km??'',pk1:first?.pk??'',km2:last?.km??'',pk2:last?.pk??'',
+  speed,category,begin:'',endTime:'',untilCancel:false,
+  stationHint:boundary.station,
+  source:section+' · '+location+' | '+({passenger:'Пас',freight:'ГР',empty:'Пор'}[category])+' '+speed+
+  (anchored?' [проверенная станционная граница]':' [станционная граница требует проверки]')};
+}
 function stationBoundary(raw){
  const s=String(raw||'').trim().replace(/[—–−]/g,'-').replace(/\s+/g,'').replace(/\([^)]*\)$/,'');
  const m=s.match(/^(.+?)-(.+)$/);if(!m)return null;
@@ -152,30 +173,34 @@ function tableFromPdfItems(items,pageHeight,pageWidth=595){
   }
  }
  for(const sequence of Object.values(bySide)){
+  const route=ctx?.route?.()||null;
   for(let i=0;i<sequence.length;i++){
    const row=sequence[i];
    for(const [category,speed] of Object.entries(row.speeds)){
     let range=row.range;
     if(!range&&row.boundary?.kind==='toStation'){
      const next=sequence[i+1];
-     // Join a named station boundary only when the NEXT row begins with
-     // the identical station name and the SAME speed for this category.
-     // If the speed changes at the station, exact PK remains unknown.
-     if(next?.boundary?.kind==='fromStation' &&
-         next.boundary.station===row.boundary.station &&
-         next.speeds[category]===speed){
+     // Adjacent rows with matching station + SAME category speed can
+     // safely be joined without inventing a station kilometre.
+     if(next?.boundary?.kind==='fromStation'&&next.boundary.station===row.boundary.station&&
+        next.speeds[category]===speed){
       range={km1:row.boundary.numeric.km,pk1:row.boundary.numeric.pk,
        km2:next.boundary.numeric.km,pk2:next.boundary.numeric.pk};
      }
     }else if(!range&&row.boundary?.kind==='fromStation'){
-     // Paired with previous record if it had the same station and speed.
      const previous=sequence[i-1];
      if(previous?.boundary?.kind==='toStation'&&previous.boundary.station===row.boundary.station&&previous.speeds[category]===speed)continue;
     }
-    if(!range){pending.push(row.section+': '+row.location+' / '+category+' — нужно уточнить км/ПК');continue}
+    if(!range){
+     // Do not discard station-boundary rows. Make editable review drafts.
+     const partial=draftFromBoundary(row.boundary,category,speed,row.section,row.location,route);
+     drafts.push(partial);
+     pending.push(row.section+': '+row.location+' / '+category+' — станционная граница для проверки');
+     continue;
+    }
     drafts.push({...range,speed,category,begin:'',endTime:'',untilCancel:false,
-      source:row.section+' · '+row.location+' | '+(category==='passenger'?'Пас':category==='freight'?'ГР':'Пор')+' '+speed+
-       (!row.range?' [две строки объединены по станции]':'')});
+     source:row.section+' · '+row.location+' | '+({passenger:'Пас',freight:'ГР',empty:'Пор'}[category])+' '+speed+
+      (!row.range?' [соседние строки объединены по станции]':'')});
    }
   }
  }
@@ -537,5 +562,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];reviewTab='ready';showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;refreshReviewTabs();showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
+root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,stationKey,stationVerifiedBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
 })(typeof globalThis!=='undefined'?globalThis:this);
