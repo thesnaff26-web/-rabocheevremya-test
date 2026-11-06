@@ -186,6 +186,7 @@ function init(){
   catch(_){alert('Не удалось сохранить копию перед удалением. Сброс отменён.');return}
   records=records.filter(a=>!(a.routeId===currentRouteId&&a.type===kind));
   persist();
+  if(selectedTab===kind&&root.UserSpeedImporter?.clearImportDrafts)root.UserSpeedImporter.clearImportDrafts();
  };
  $('userRestoreReset').onclick=()=>{
   let backup=null;
