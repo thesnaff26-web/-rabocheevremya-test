@@ -88,3 +88,11 @@
 #userSpeedManager .userSpeedTabs button.active .userSpeedCount{background:#06281f20}
 #userSpeedListTitle{margin-top:14px}
 @media(max-width:360px){#userSpeedManager .userSpeedTabs button{font-size:11px;padding:10px 3px;min-height:84px}}
+
+/* Large digit-only speed input, consistent with kilometre/picket fields. */
+#userSpeedForm input[name="speed"]{
+ font-size:23px!important;font-weight:750!important;font-variant-numeric:tabular-nums;
+ min-height:55px;padding:10px 13px!important;letter-spacing:.35px;
+ color:#112638;background:#f0f5f8;border-radius:12px;text-align:center;
+}
+#userSpeedForm input[name="speed"]:focus{outline:3px solid #4b9dff;outline-offset:1px}
