@@ -20,7 +20,7 @@ function setTab(type,resetForm=true){
  if(!['permanent','temporary','tp'].includes(type))return;
  selectedTab=type;
  const f=$('userSpeedForm');
- if(f&&resetForm){f.reset();f.elements.uid.value='';f.elements.kind.value=type;toggle();syncTimeButtons();}
+ if(f&&resetForm){f.reset();f.elements.uid.value='';f.elements.kind.value=type;if(type!=='permanent')f.elements.begin.value=nowMoscow();toggle();syncTimeButtons();}
  list();
 }
 function sortingInfo(a){
@@ -109,7 +109,6 @@ function initTimePicker(){
   close();
  };
  $('userTimeClear').onclick=()=>{if(key){f.elements[key].value='';syncTimeButtons()}close()};
- $('userTimeNow').onclick=()=>fill(nowMoscow());
  overlay.onclick=e=>{if(e.target===overlay)close()};
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)close()});
 }
@@ -131,7 +130,7 @@ function init(){
  <div class="userSpeedGrid"><label>Начало · км<input name="km1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000" required></label><label>ПК<input name="pk1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10" required></label></div>
  <div id="userEndFields"><p class="small">Конец необязателен. Без него на карте будет только точечная отметка, не участок ограничения.</p><div class="userSpeedGrid"><label>Конец · км<input name="km2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000"></label><label>ПК<input name="pk2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10"></label></div></div>
  <div id="userTpFields" hidden><p class="small">1 — приготовиться, 2 — опустить, 3 — поднять. Первая точка выше.</p><label>Опора · приготовиться<input name="pole1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="Номер опоры"></label><div class="userSpeedGrid"><label>Опустить · км<input name="tpKm2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000"></label><label>ПК<input name="tpPk2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10"></label></div><label>Опора · опустить<input name="pole2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6"></label><div class="userSpeedGrid"><label>Поднять · км<input name="km3" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000"></label><label>ПК<input name="pk3" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10"></label></div><label>Опора · поднять<input name="pole3" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6"></label></div>
- <div id="userTimeFields" hidden><p class="small" id="userMoscowNow">Время по Москве (UTC+3).</p><button type="button" id="userMoscowSet">Сейчас по МСК</button>
+ <div id="userTimeFields" hidden><p class="small" id="userMoscowNow">Начало автоматически выставляется по Москве (UTC+3). При необходимости измените дату и время.</p>
  <label>Начало действия · МСК (необязательно)<input name="begin" type="hidden"><button type="button" class="userTimePick" data-time="begin">Выбрать дату и время</button></label>
  <label><input type="checkbox" name="untilCancel"> До отмены</label>
  <label id="userEndTime">Конец действия · МСК (необязательно)<input name="endTime" type="hidden"><button type="button" class="userTimePick" data-time="endTime">Выбрать дату и время</button></label>
@@ -139,7 +138,7 @@ function init(){
  <div class="userTimeOverlay" id="userTimeOverlay" hidden><div class="userTimeSheet">
  <div class="userTimeHead"><button type="button" id="userTimeCancel">Отмена</button><b>Дата и время · МСК</b><button type="button" id="userTimeDone">Готово</button></div>
  <div class="userWheelLabels"><span>День</span><span>Месяц</span><span>Год</span><span>Час</span><span>Мин</span></div><div class="userWheelBody"><div class="userWheelFocus"></div><div class="userWheelCol" id="userWheelDay"></div><div class="userWheelCol" id="userWheelMonth"></div><div class="userWheelCol" id="userWheelYear"></div><div class="userWheelCol" id="userWheelHour"></div><div class="userWheelCol" id="userWheelMinute"></div></div>
- <div class="userTimeFoot"><button type="button" id="userTimeNow">Сейчас МСК</button><button type="button" id="userTimeClear">Без времени</button></div></div></div>
+ <div class="userTimeFoot"><button type="button" id="userTimeClear">Без времени</button></div></div></div>
  <button type="submit" class="primary">Сохранить запись</button><button type="button" id="userClearForm">Очистить форму</button><p id="userSpeedStatus" role="status"></p></form>
  <div class="row"><button id="userSpeedExport">Резервная копия JSON</button><label class="userImport">Импорт JSON<input type="file" id="userSpeedImport" accept="application/json,.json"></label></div>
  <p class="small">Распознавание фотографий и PDF добавим отдельным этапом. Сейчас работает ручное заполнение и перенос собственных записей в JSON.</p>
@@ -153,11 +152,10 @@ function init(){
   const field=f.elements[name];
   field.addEventListener('input',()=>{const only=field.value.replace(/[^0-9]/g,'');if(field.value!==only)field.value=only.slice(0,field.maxLength>0?field.maxLength:undefined)});
  }
- const clear=()=>{f.reset();f.elements.uid.value='';f.elements.kind.value=selectedTab;toggle();syncTimeButtons()};
+ const clear=()=>{f.reset();f.elements.uid.value='';f.elements.kind.value=selectedTab;if(selectedTab!=='permanent')f.elements.begin.value=nowMoscow();toggle();syncTimeButtons()};
  for(const btn of wrap.querySelectorAll('#userSpeedTabs [data-tab]'))btn.onclick=()=>setTab(btn.dataset.tab);
  f.elements.untilCancel.onchange=toggle;$('userClearForm').onclick=clear;
- $('userMoscowSet').onclick=()=>{f.elements.begin.value=nowMoscow();syncTimeButtons();$('userSpeedStatus').textContent='Начало выставлено по МСК'};
- $('userMoscowNow').textContent='Сейчас в Москве: '+prettyMsk(nowMoscow())+'. Вводите московское, не местное время телефона.';
+ $('userMoscowNow').textContent='Начало подставлено по МСК. При необходимости измените дату и время. Часовой пояс телефона не используется.';
  f.onsubmit=e=>{e.preventDefault();try{if(!route)throw Error('Сначала выберите путь');const type=f.elements.kind.value,start=metres(f.elements.km1.value,f.elements.pk1.value),end=type==='tp'?metres(f.elements.tpKm2.value,f.elements.tpPk2.value):(f.elements.km2.value!==''&&f.elements.pk2.value!==''?metres(f.elements.km2.value,f.elements.pk2.value):null),raise=type==='tp'?metres(f.elements.km3.value,f.elements.pk3.value):null;if(type!=='tp'&&(f.elements.km2.value!==''||f.elements.pk2.value!=='')&&end===null)throw Error('Заполните обе границы конца или оставьте их пустыми');const speed=type==='tp'?null:Number(f.elements.speed.value);if(type!=='tp'&&!(speed>=1&&speed<=200))throw Error('Неверная скорость');if(type!=='tp'&&end!==null&&start===end)throw Error('Укажите разные границы');if(type==='tp'&&(new Set([start,end,raise]).size!==3))throw Error('Укажите три разные точки');if(type==='tp'&&!((end-start)*route.direction>0&&(raise-end)*route.direction>0))throw Error('Точки ТП должны идти последовательно по выбранному направлению');const begin=f.elements.begin.value,endTime=f.elements.endTime.value,untilCancel=f.elements.untilCancel.checked;if(type!=='permanent'&&endTime&&!begin)throw Error('Для времени окончания укажите начало действия МСК');if(type!=='permanent'&&!untilCancel&&begin&&endTime&&stamp(endTime)<stamp(begin))throw Error('Конец раньше начала');const id=f.elements.uid.value||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2));const a={id,routeId:route.id,type,category:f.elements.train.value,start,end:type==='tp'?undefined:end,lower:type==='tp'?end:undefined,raise,speed,pole1:f.elements.pole1.value,pole2:f.elements.pole2.value,pole3:f.elements.pole3.value,begin:type==='permanent'?'':begin,endTime:type==='permanent'?'':(untilCancel?'':endTime),untilCancel:type==='permanent'?false:untilCancel};records=records.filter(x=>x.id!==id);records.push(a);persist();clear();$('userSpeedStatus').textContent='Сохранено офлайн';}catch(err){$('userSpeedStatus').textContent=err.message;}};
  for(const [id,k] of [['userShowPerm','permanent'],['userShowTemp','temporary'],['userShowTp','tp']])$(id).onchange=e=>{shown[k]=e.target.checked;rerender()};
  $('userSpeedCategory').onchange=e=>{category=e.target.value;rerender()};
