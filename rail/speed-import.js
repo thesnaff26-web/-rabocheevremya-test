@@ -507,11 +507,12 @@ function draftProblems(a,route){
 }
 function draftFromCard(card){
  const value=k=>card.querySelector('[data-field="'+k+'"]')?.value.trim()||'';
- return {stationHint:card.dataset.stationHint||'',km1:value('km1'),pk1:value('pk1'),km2:value('km2'),pk2:value('pk2'),speed:value('speed'),category:value('category'),
+ return {ocrUnverified:card.dataset.ocrUnverified==='true',stationHint:card.dataset.stationHint||'',km1:value('km1'),pk1:value('pk1'),km2:value('km2'),pk2:value('pk2'),speed:value('speed'),category:value('category'),
    begin:value('begin'),endTime:value('endTime'),untilCancel:!!card.querySelector('[data-field="untilCancel"]')?.checked};
 }
 function issuesForDraft(a,route){
  const issues=draftProblems(a,route);
+ if(a.ocrUnverified)issues.push('Проверьте по ДУ-61: км/ПК, скорость и время действия МСК');
  if(a.stationHint&&(!a.km1||!a.pk1||!a.km2||!a.pk2))issues.push('уточните станционную границу по официальному источнику');
  if(!/^\d{4}$/.test(a.km1)||!/^(10|[1-9])$/.test(a.pk1))issues.push('проверьте начало км/ПК');
  if((a.km2||a.pk2)&&(!/^\d{4}$/.test(a.km2)||!/^(10|[1-9])$/.test(a.pk2)))issues.push('проверьте конец км/ПК');
@@ -586,6 +587,7 @@ function showDrafts(){
    (ctx.tab==='temporary'?'<div class="speedImportDates"><label>Начало МСК (необязательно)<input data-field="begin" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.begin)+'"></label><label>Конец МСК (необязательно)<input data-field="endTime" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.endTime)+'"></label><label><input type="checkbox" data-field="untilCancel"> До отмены</label></div>':'')+
    '<small>Источник: '+view(a.source||'Добавлено вручную')+'</small>';
   card.dataset.stationHint=a.stationHint||'';
+  card.dataset.ocrUnverified=a.ocrUnverified?'true':'false';
   card.querySelector('[data-field="category"]').value=a.category||'';
   list.append(card);
  }
