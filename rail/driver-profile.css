@@ -142,3 +142,14 @@
 #speedImportPanel .speedImportUnresolved[hidden]{display:none!important}
 #speedImportPanel .speedImportUnresolved ol{margin:7px 0 0;padding-left:21px}
 #speedImportPanel .speedImportUnresolved li{margin:5px 0;overflow-wrap:anywhere}
+
+/* Two exclusive import-review tabs; counts include cards from both tabs. */
+#speedImportPanel .speedImportReviewTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 10px}
+#speedImportPanel .speedImportReviewTabs button{min-width:0;min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;padding:10px 6px;background:#1b3346;border:1px solid #516f83;border-radius:11px;color:#ecf5ff;font-size:14px;line-height:1.25;font-weight:750}
+#speedImportPanel .speedImportReviewTabs button.active[data-review-tab="ready"]{background:#17674e;border-color:#36d49f;color:white}
+#speedImportPanel .speedImportReviewTabs button.active[data-review-tab="review"]{background:#684c25;border-color:#e2a34a;color:#fff4dc}
+#speedImportPanel .speedImportTabCount{display:inline-flex;align-items:center;justify-content:center;min-width:26px;border-radius:99px;background:#ffffff24;padding:3px 7px;font-variant-numeric:tabular-nums}
+#speedImportPanel .speedImportDraft[hidden],#speedImportPanel .speedImportReviewEmpty[hidden]{display:none!important}
+#speedImportPanel .speedImportReviewEmpty{font-size:13px;margin:12px 0;color:#b4cad7}
+#speedImportPanel .speedImportDraft .speedImportWarning{border-left:3px solid #fbbf24;padding:5px 9px;color:#ffe4ab;line-height:1.4;font-size:12px}
+#speedImportPanel .speedImportDraft .speedImportWarning[hidden]{display:none!important}
