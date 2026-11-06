@@ -376,7 +376,17 @@ async function du61Photo(file){
    if(i===2)await worker.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'11'});
    const scan=await withTimeout(worker.recognize(crop),60000,'Распознавание '+reg.title);
    text+='\n--- '+reg.title+' ---\n'+(scan.data.text||'')+'\n';
-   parts.push(du61Rows(scan,0).map(row=>({...row,y:sy+row.y/cropScale})));
+   const rows=du61Rows(scan,0).map(row=>({...row,y:sy+row.y/cropScale}));
+   if(i===2){
+    await worker.setParameters({tessedit_pageseg_mode:'6'});
+    const retry=await withTimeout(worker.recognize(crop),60000,'Повторное чтение скорости');
+    text+='\n--- повторное чтение скорости ---\n'+(retry.data.text||'')+'\n';
+    for(const row of du61Rows(retry,0)){
+     const item={...row,y:sy+row.y/cropScale};
+     if(!rows.some(old=>Math.abs(old.y-item.y)<9&&old.text===item.text))rows.push(item);
+    }
+   }
+   parts.push(rows);
    crop.width=0;crop.height=0;
   }
   canvas.width=0;canvas.height=0;
