@@ -26,7 +26,7 @@ function setTab(type,resetForm=true){
  const f=$('userSpeedForm');
  if(f&&resetForm){f.reset();f.elements.uid.value='';f.elements.kind.value=type;if(type!=='permanent')f.elements.begin.value=nowMoscow();toggle();syncTimeButtons();}
  list();
- if(root.UserSpeedImporter)root.UserSpeedImporter.setTab(type);
+
 }
 function sortingInfo(a){
  const direction=route&&route.direction===-1?-1:1;
@@ -186,7 +186,7 @@ function init(){
   catch(_){alert('Не удалось сохранить копию перед удалением. Сброс отменён.');return}
   records=records.filter(a=>!(a.routeId===currentRouteId&&a.type===kind));
   persist();
-  if(selectedTab===kind&&root.UserSpeedImporter?.clearImportDrafts)root.UserSpeedImporter.clearImportDrafts();
+
  };
  $('userRestoreReset').onclick=()=>{
   let backup=null;
@@ -203,29 +203,7 @@ function init(){
  $('userSpeedExport').onclick=()=>{const blob=new Blob([JSON.stringify({format:'rail-user-speeds-v1',records},null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='rail-speeds-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)};
  $('userSpeedImport').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;const data=JSON.parse(await file.text());if(data.format!=='rail-user-speeds-v1'||!Array.isArray(data.records)||!data.records.every(valid))throw Error('Неподдерживаемая резервная копия');if(!confirm('Добавить '+data.records.length+' записей из копии? Существующие не будут удалены.'))return;const known=new Set(records.map(x=>x.id));records.push(...data.records.filter(x=>!known.has(x.id)));persist();}catch(err){alert('Ошибка импорта: '+err.message)}finally{e.target.value=''}};
  toggle();initTimePicker();syncTimeButtons();list();
- if(root.UserSpeedImporter){
-  root.UserSpeedImporter.setup({
-   tab:selectedTab,
-   route:()=>route,
-   save:rows=>{
-    if(!route)throw Error('Сначала выберите путь');
-    const ids=new Set(records.map(a=>[a.type,a.routeId,a.category,a.start,a.end,a.speed,a.begin,a.endTime,a.untilCancel].join('|')));
-    let added=0,duplicates=0;
-    for(const row of rows){
-     if(row.type!==selectedTab||row.routeId!==route.id)throw Error('Раздел или направление изменились во время импорта');
-     if(!['permanent','temporary'].includes(row.type)||!valid({...row,id:'import'}))throw Error('Недопустимые данные для импорта');
-     const key=[row.type,row.routeId,row.category,row.start,row.end,row.speed,row.begin,row.endTime,row.untilCancel].join('|');
-     if(ids.has(key)){duplicates++;continue}
-     ids.add(key);
-     records.push({...row,id:'imp-'+Date.now()+'-'+Math.random().toString(36).slice(2)});
-     added++;
-    }
-    if(added)persist();
-    return {added,duplicates};
-   }
-  });
-  root.UserSpeedImporter.setTab(selectedTab);
- }
+
 }
 
 function distanceInfo(pos){
