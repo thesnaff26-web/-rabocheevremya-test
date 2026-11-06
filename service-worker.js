@@ -1,4 +1,4 @@
-const CACHE = 'rabochee-vremya-v58-speed-tabs-20261106';
+const CACHE = 'rabochee-vremya-v59-speed-digit-travel-sort-20261106';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 const RAIL = ['./track-profile.html', './privacy.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/user-speeds.js', './rail/driver-profile.css'];
