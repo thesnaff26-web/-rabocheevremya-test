@@ -400,6 +400,14 @@ function readDrafts(){
  if(!out.length)throw Error('Выберите хотя бы одну проверенную строку');
  return out;
 }
+function clearImportDrafts(){
+ candidates=[];
+ const input=$('speedImportText');if(input)input.value='';
+ const drafts=$('speedImportDrafts');if(drafts)drafts.replaceChildren();
+ const checkbox=$('speedImportConfirm');if(checkbox)checkbox.checked=false;
+ for(const id of ['speedImportFile','speedImportCamera']){const el=$(id);if(el)el.value=''}
+ showUnresolved([]);showCoverage();
+}
 async function saveDrafts(){
  try{
   const rows=readDrafts();
@@ -407,7 +415,7 @@ async function saveDrafts(){
   const result=ctx.save(rows);
   status('Сохранено '+result.added+' записей; дубликатов пропущено: '+result.duplicates+'.');
   $('speedImportConfirm').checked=false;
-  if(result.added){$('speedImportDrafts').replaceChildren();candidates=[];showCoverage()}
+  clearImportDrafts();
  }catch(e){status(e.message,true)}
 }
 async function handleFile(file){
@@ -449,7 +457,7 @@ function setup(options){
  '<div class="speedImportActions"><label class="speedImportButton">Сфотографировать<input type="file" id="speedImportCamera" accept="image/*" capture="environment"></label><label class="speedImportButton">Фото / файл / PDF<input type="file" id="speedImportFile" accept="image/*,.pdf,application/pdf"></label></div>'+
  '<p class="speedImportDisclaimer">Для первого распознавания нужен интернет (библиотеки загружаются с внешних CDN). Обработка выполняется в браузере, приложение не сохраняет фото/PDF на сервере. Сканированные PDF распознаются максимум по 5 страницам. Результат нужно сверить с документом.</p>'+
  '<label>Распознанный текст (можно исправить)<textarea id="speedImportText" rows="5" placeholder="6904/3-6903/5;40&#10;6903/6-6902/1;60"></textarea></label>'+
- '<div class="speedImportActions"><button type="button" id="speedImportParse">Найти строки</button><button type="button" id="speedImportAddManual">Добавить строку</button></div>'+
+ '<div class="speedImportActions"><button type="button" id="speedImportParse">Найти строки</button><button type="button" id="speedImportAddManual">Добавить строку</button><button type="button" id="speedImportClear">Очистить распознанное</button></div>'+
  '<p id="speedImportStatus" role="status"></p><div id="speedImportUnresolved" class="speedImportUnresolved" hidden></div><div id="speedImportDrafts"></div><div id="speedImportCoverage" class="speedImportCoverage" role="status" hidden></div>'+
  '<label class="speedImportReview"><input type="checkbox" id="speedImportConfirm"> Я сверил выбранные записи с исходным документом, включая направление, км, ПК, скорости и время МСК.</label>'+
  '<button type="button" id="speedImportSave">Сохранить проверенные записи</button>';
@@ -459,6 +467,7 @@ function setup(options){
  $('speedImportParse').onclick=handleText;
  $('speedImportAddManual').onclick=addManual;
  $('speedImportSave').onclick=saveDrafts;
+ $('speedImportClear').onclick=()=>{clearImportDrafts();status('Распознанный текст и черновики очищены. Сохранённые записи не изменились.')};
  $('speedImportDrafts').addEventListener('input',showCoverage);
  $('speedImportDrafts').addEventListener('change',showCoverage);
 }
@@ -466,5 +475,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];showUnresolved([]);$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;showCoverage();status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
+root.UserSpeedImporter={setup,setTab,clearImportDrafts,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems,tableFromOcrText,speedTripleFromLine,coverageReport};
 })(typeof globalThis!=='undefined'?globalThis:this);
