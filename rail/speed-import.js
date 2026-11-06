@@ -412,7 +412,7 @@ async function tableImageText(imageSource,worker){
  const w=imageSource.width,h=imageSource.height;
  if(!w||!h)throw Error('Не удалось определить размер фотографии');
  const base=document.createElement('canvas');
- const scale=Math.min(1,1600/Math.max(w,h));base.width=Math.max(1,Math.round(w*scale));base.height=Math.max(1,Math.round(h*scale));
+ const scale=1; // preserve original resolution for railway speed-table OCRbase.width=Math.max(1,Math.round(w*scale));base.height=Math.max(1,Math.round(h*scale));
  const context=base.getContext('2d',{willReadFrequently:true});
  if(!context)throw Error('Браузер не поддерживает подготовку изображения');
  context.drawImage(imageSource,0,0,base.width,base.height);
@@ -427,7 +427,7 @@ async function tableImageText(imageSource,worker){
   const cw=Math.max(1,Math.round(doc.w*plan.width)),ch=Math.max(1,Math.round(doc.h*plan.height));
   const sx=doc.x+doc.w*plan.x,sy=doc.y+doc.h*plan.y;
   const out=document.createElement('canvas');
-  const grow=Math.min(4,1800/cw);
+  const grow=Math.max(1,Math.min(4,1800/cw));
   out.width=Math.max(1,Math.round(cw*grow));out.height=Math.max(1,Math.round(ch*grow));
   out.getContext('2d').drawImage(base,sx,sy,cw,ch,0,0,out.width,out.height);
   // OCR text is reviewed; mismatching cells never become confirmed automatically.
