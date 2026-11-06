@@ -96,3 +96,26 @@
  color:#112638;background:#f0f5f8;border-radius:12px;text-align:center;
 }
 #userSpeedForm input[name="speed"]:focus{outline:3px solid #4b9dff;outline-offset:1px}
+
+/* Photo/PDF import, staged OCR review before saving any warning. */
+#speedImportPanel{margin:18px 0;padding:13px;border:1px solid #37536b;border-radius:14px;background:#102434;color:#e6f1fa}
+#speedImportPanel[hidden]{display:none!important}
+#speedImportPanel h3{margin:3px 0 8px;font-size:16px}
+#speedImportPanel p{font-size:12px;color:#b4cad7;line-height:1.5}
+#speedImportPanel label{font-size:12px;line-height:1.35}
+#speedImportPanel .speedImportActions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+#speedImportPanel .speedImportButton,#speedImportPanel button{display:flex;align-items:center;justify-content:center;min-width:0;min-height:46px;padding:11px 9px;border-radius:11px;border:1px solid #4b6c83;background:#1b3448;color:#edf7ff;font-size:14px;font-weight:750;text-align:center;cursor:pointer}
+#speedImportPanel .speedImportButton input[type=file]{position:absolute;inline-size:1px;block-size:1px;opacity:0;overflow:hidden;pointer-events:none}
+#speedImportPanel textarea{display:block;width:100%;min-height:125px;resize:vertical;border:1px solid #567387;background:#e9f1f8;color:#0a2537;font-size:16px;line-height:1.45;padding:10px;border-radius:11px;margin:7px 0}
+#speedImportPanel .speedImportDraft{margin:10px 0;padding:10px;border:1px solid #456478;border-radius:12px;background:#142b3c}
+#speedImportPanel .speedImportNumbers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:10px 0}
+#speedImportPanel .speedImportNumbers label{min-width:0;text-align:center;font-size:11px}
+#speedImportPanel .speedImportNumbers input{box-sizing:border-box;width:100%;min-width:0;border:1px solid #8ba5b9;border-radius:8px;background:#edf4f8;color:#102a39;font-size:18px;text-align:center;min-height:48px;padding:4px 2px;font-variant-numeric:tabular-nums}
+#speedImportPanel .speedImportDates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#speedImportPanel .speedImportDates input:not([type=checkbox]),#speedImportPanel select{box-sizing:border-box;width:100%;min-width:0;background:#edf4f8;color:#102a39;border:1px solid #8ba5b9;border-radius:9px;padding:10px 7px;font-size:16px}
+#speedImportPanel input[type=checkbox]{width:21px;height:21px;vertical-align:middle}
+#speedImportPanel .speedImportReview{display:block;padding:10px;background:#1a3345;border-radius:9px;margin-top:12px}
+#speedImportPanel #speedImportSave{width:100%;background:#36cfa0;color:#06231c;border-color:#36cfa0;margin-top:9px}
+#speedImportPanel .speedImportDisclaimer{padding:8px 10px;border-left:3px solid #7597aa}
+#speedImportPanel small{display:block;overflow-wrap:anywhere;color:#a4bdcb}
+@media(max-width:380px){#speedImportPanel .speedImportNumbers{grid-template-columns:repeat(3,minmax(0,1fr))}#speedImportPanel .speedImportDates{grid-template-columns:1fr}}
