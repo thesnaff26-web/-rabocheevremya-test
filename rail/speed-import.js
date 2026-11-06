@@ -71,41 +71,81 @@ function stationlessRange(raw){
  if(b!==null&&a===b&&pk1===pk2)return null;
  return {km1:a,pk1,km2:b??'',pk2:pk2??''};
 }
+function stationKey(s){return String(s||'').toLowerCase().replace(/[^а-яёa-z0-9]/gi,'').replace(/ё/g,'е')}
+function stationBoundary(raw){
+ const s=String(raw||'').trim().replace(/[—–−]/g,'-').replace(/\s+/g,'').replace(/\([^)]*\)$/,'');
+ const m=s.match(/^(.+?)-(.+)$/);if(!m)return null;
+ const numeric=x=>{const p=x.match(/^(\d{4})пк(10|[1-9])$/i);return p?{km:+p[1],pk:+p[2]}:null};
+ const start=numeric(m[1]),end=numeric(m[2]);
+ if(start&&!end&&stationKey(m[2]))return {kind:'toStation',station:stationKey(m[2]),numeric:start};
+ if(!start&&end&&stationKey(m[1]))return {kind:'fromStation',station:stationKey(m[1]),numeric:end};
+ return null;
+}
 function tableFromPdfItems(items,pageHeight){
- const byY=[];
+ const rows=[];
  for(const item of items||[]){
   const tr=item.transform||[],str=String(item.str||'').trim();
   if(!str||!Number.isFinite(tr[4])||!Number.isFinite(tr[5]))continue;
   const x=tr[4],y=pageHeight-tr[5];
-  let row=byY.find(r=>Math.abs(r.y-y)<2.8);
-  if(!row){row={y,items:[]};byY.push(row)}
+  let row=rows.find(r=>Math.abs(r.y-y)<2.8);
+  if(!row){row={y,items:[]};rows.push(row)}
   row.items.push({x,str});
  }
- const drafts=[];
- for(const row of byY){
-  // The page includes unrelated station-speed and brake-test tables.
-  // Only the three clearly positioned "Пас / ГР / Пор" columns are accepted.
+ const drafts=[],pending=[];
+ // Maintain the order of table rows separately for each column grouping.
+ const bySide={left:[],right:[]};
+ for(const row of rows.sort((a,b)=>a.y-b.y)){
   for(const side of ['left','right']){
    if(side==='right'&&row.y<650)continue;
    const cells=row.items.filter(it=>side==='left'?it.x<205:it.x>=428);
    if(!cells.length)continue;
    const location=cells.filter(it=>side==='left'?it.x<108:it.x<527)
-     .sort((a,b)=>a.x-b.x).map(it=>it.str).join(' ');
-   const range=stationlessRange(location);
-   if(!range)continue;
+    .sort((a,b)=>a.x-b.x).map(it=>it.str).join(' ').trim();
+   const range=stationlessRange(location),boundary=stationBoundary(location);
+   if(!range&&!boundary)continue;
    const slots=side==='left'
      ?[{category:'passenger',from:109,to:134},{category:'freight',from:135,to:162},{category:'empty',from:164,to:203}]
      :[{category:'passenger',from:528,to:547},{category:'freight',from:548,to:569},{category:'empty',from:570,to:597}];
+   const speeds={};
    for(const col of slots){
-    const speedCell=cells.filter(it=>it.x>=col.from&&it.x<col.to).map(it=>it.str).join('').trim();
-    if(!/^\d{1,3}$/.test(speedCell))continue;
-    const speed=+speedCell;
-    if(speed<1||speed>200)continue;
-    drafts.push({...range,speed,category:col.category,begin:'',endTime:'',untilCancel:false,
-      source:location+' | '+(col.category==='passenger'?'Пас':col.category==='freight'?'ГР':'Пор')+' '+speed});
+    const token=cells.filter(it=>it.x>=col.from&&it.x<col.to).map(it=>it.str).join('').trim();
+    if(/^\d{1,3}$/.test(token)&&+token>=1&&+token<=200)speeds[col.category]=+token;
+   }
+   if(!Object.keys(speeds).length)continue;
+   bySide[side].push({location,range,boundary,speeds});
+  }
+ }
+ for(const sequence of Object.values(bySide)){
+  for(let i=0;i<sequence.length;i++){
+   const row=sequence[i];
+   for(const [category,speed] of Object.entries(row.speeds)){
+    let range=row.range;
+    if(!range&&row.boundary?.kind==='toStation'){
+     const next=sequence[i+1];
+     // Join a named station boundary only when the NEXT row begins with
+     // the identical station name and the SAME speed for this category.
+     // If the speed changes at the station, exact PK remains unknown.
+     if(next?.boundary?.kind==='fromStation' &&
+         next.boundary.station===row.boundary.station &&
+         next.speeds[category]===speed){
+      range={km1:row.boundary.numeric.km,pk1:row.boundary.numeric.pk,
+       km2:next.boundary.numeric.km,pk2:next.boundary.numeric.pk};
+     }
+    }else if(!range&&row.boundary?.kind==='fromStation'){
+     // Paired with previous record if it had the same station and speed.
+     const previous=sequence[i-1];
+     if(previous?.boundary?.kind==='toStation'&&previous.boundary.station===row.boundary.station&&previous.speeds[category]===speed)continue;
+    }
+    if(!range){pending.push(row.location+' / '+category);continue}
+    drafts.push({...range,speed,category,begin:'',endTime:'',untilCancel:false,
+      source:row.location+' | '+(category==='passenger'?'Пас':category==='freight'?'ГР':'Пор')+' '+speed+
+       (!row.range?' [две строки объединены по станции]':'')});
    }
   }
  }
+ // This does not mean that all kilometre ranges are covered. The UI explicitly reports
+ // the skipped station boundaries rather than representing them as unrestricted.
+ tableFromPdfItems.lastUnresolved=pending;
  return drafts;
 }
 function status(msg,error=false){const el=$('speedImportStatus');if(el){el.textContent=msg;el.style.color=error?'#fda4af':''}}
@@ -116,17 +156,17 @@ async function pdfText(file){
  status('Читаю файл PDF…');
  const doc=await withTimeout(pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise,16000,'Чтение PDF');
  if(doc.numPages>20)throw Error('Документ содержит более 20 страниц. Разделите PDF на части.');
- let text='',pageLimit=Math.min(doc.numPages,20),tableRows=[];
+ let text='',pageLimit=Math.min(doc.numPages,20),tableRows=[],unresolved=[];
  for(let i=1;i<=pageLimit;i++){
   status('Читаю PDF: страница '+i+' из '+pageLimit);
   const p=await withTimeout(doc.getPage(i),12000,'Открытие страницы PDF');
   const tc=await withTimeout(p.getTextContent(),12000,'Чтение таблицы PDF'),items=tc.items||[];
-  if(ctx?.tab==='permanent')tableRows.push(...tableFromPdfItems(items,p.view[3]-p.view[1]));
+  if(ctx?.tab==='permanent'){tableRows.push(...tableFromPdfItems(items,p.view[3]-p.view[1]));unresolved.push(...(tableFromPdfItems.lastUnresolved||[]))}
   let y=null;
   for(const item of items){const yy=Math.round(item.transform?.[5]||0);if(y!==null&&Math.abs(yy-y)>3)text+='\n';text+=String(item.str||'')+' ';y=yy}
   text+='\n';
  }
- if(tableRows.length)return {text,drafts:tableRows.slice(0,300)};
+ if(tableRows.length)return {text,drafts:tableRows.slice(0,300),unresolved};
  if(!extract(text).length){
   // Scanned PDF pages have no embedded text. OCR a small number of pages in memory.
   const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
@@ -145,11 +185,11 @@ async function pdfText(file){
     canvas.width=0;canvas.height=0;
    }
    // Surface OCR text for verification, regardless of whether rows were found.
-   if(scanned.trim())return {text:scanned,drafts:[]};
+   if(scanned.trim())return {text:scanned,drafts:[],unresolved:[]};
   }finally{await worker.terminate()}
  }
  if(!text.trim())throw Error('Не удалось извлечь текст из PDF. Попробуйте фотографию страницы.');
- return {text,drafts:[]};
+ return {text,drafts:[],unresolved:[]};
 }
 async function imageText(file){
  const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
@@ -222,7 +262,7 @@ async function handleFile(file){
  try{
   const result=isPdf?await pdfText(file):{text:await imageText(file),drafts:[]};
   $('speedImportText').value=result.text;
-  if(result.drafts.length){candidates=result.drafts;showDrafts();status('По колонкам PDF найдено '+candidates.length+' скоростей. Сверьте по исходнику все км, ПК и категории. Строки с названиями станций не угадываются.');}
+  if(result.drafts.length){candidates=result.drafts;showDrafts();status('Найдено '+candidates.length+' скоростей. '+(result.unresolved?.length?'Не разрешено границ по станциям: '+result.unresolved.length+'. Эти участки останутся пустыми до проверки. ':'')+'Сверьте все км, ПК и категории с PDF перед сохранением.');}
   else handleText();
   if(!candidates.length)status('Распознавание завершено, но строки не определились. Проверьте текст и внесите записи вручную.',true);
  }catch(e){status(e.message||'Не удалось прочитать файл',true)}
@@ -251,5 +291,5 @@ function setTab(tab){
  if(!ctx||!['permanent','temporary'].includes(tab)){$('speedImportPanel').hidden=true;return}
  ctx.tab=tab;$('speedImportPanel').hidden=false;candidates=[];$('speedImportDrafts').replaceChildren();$('speedImportText').value='';$('speedImportConfirm').checked=false;status('Выберите фотографию/PDF или добавьте строку вручную.');
 }
-root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,tableFromPdfItems};
+root.UserSpeedImporter={setup,setTab,extract,rowFromLine,stationlessRange,stationBoundary,tableFromPdfItems};
 })(typeof globalThis!=='undefined'?globalThis:this);
