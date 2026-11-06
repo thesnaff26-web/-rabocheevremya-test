@@ -40,7 +40,7 @@
   try{const saved=JSON.parse(localStorage.getItem(RailCalibration.KEY)||'[]');if(Array.isArray(saved))anchors=saved.slice(-50)}catch(_){}
   data=RailCalibration.apply(baseData,anchors,C);
   $('anchorStatus').textContent='На этом телефоне сохранено привязок: '+anchors.length+'.';
-  $('status').textContent='Выберите чётный или нечётный путь. Участок определяется по GPS. Км/ПК будет приблизительным.';
+  $('status').textContent='Выберите участок в электронной карте. GPS только определяет положение на выбранном участке.';
   ['viewRange','stations','go','prev','next'].forEach(id=>$(id).disabled=false);
   const list=data.sections.flatMap(s=>s.stations).sort((a,b)=>a[0]-b[0]),names=new Set();
   for(const [m,name] of list){if(names.has(name))continue;names.add(name);const o=document.createElement('option');o.value=m;o.textContent=name+' · '+Math.floor(m/1000)+' км';$('stations').append(o)}
@@ -48,11 +48,16 @@
   map.select(center);$('mapPlus').disabled=false;$('mapMinus').disabled=false;$('mapAll').disabled=false;
   $('mapPlus').onclick=map.zoomIn;$('mapMinus').onclick=map.zoomOut;$('mapAll').onclick=map.overview;
   try{regime=await RegimeViewer.create(m=>{if(gps?.isActive())gps.stop('Автоследование приостановлено для ручного просмотра.');if(m>=low&&m<=high){center=m;map?.select(center);render(false)}});if(regime&&window.DriverProfile)DriverProfile.create(regime)}catch(e){$('regimeStatus').textContent='Не удалось открыть режимки: '+e.message}
+  document.addEventListener('railroutechanged',()=>{
+   if(gps?.isActive())gps.stop('Выбран другой участок. Для нового маршрута включите GPS повторно.');
+   $('status').textContent='Маршрут выбран вручную. GPS не меняет участок.';
+   $('gpsPath').textContent='Выбран участок: '+regime.catalog.routes.find(r=>r.id===regime.state().routeId).name;
+  });
   await loadGeometry();
   gps=RailGPS.create(data,{
    measure(position){rawFix=position;const c=position.coords;rawHint=C.overviewLocation(data,c.latitude,c.longitude,c.accuracy);$('gpsDiagnostic').textContent='Координаты телефона: '+c.latitude.toFixed(6)+', '+c.longitude.toFixed(6)+'. Измерение: '+new Date(position.timestamp).toLocaleTimeString();},
    fix(fix){liveFix=fix;$('position').textContent='≈ '+C.formatPicket(fix.chain);$('accuracy').textContent=Math.round(fix.accuracy)+' м';$('offset').textContent=Math.round(fix.distance)+' м';$('speed').textContent=fix.speed===null?'—':Math.round(fix.speed*3.6)+' км/ч';$('status').textContent='GPS-следование включено. Км/ПК приблизительный.'+(fix.degraded?' Пониженная точность GPS: '+Math.round(fix.accuracy)+' м.':'');center=fix.chain;map?.select(center);render(false);$('centerLabel').textContent='GPS ≈ '+C.formatPicket(center);regime?.goLive(center,fix.accuracy,{geometrySource:fix.geometrySource,degraded:!!fix.degraded})},
-   lost(reason,details={}){liveFix=null;$('position').textContent='Км/ПК не определён';const c=rawFix?.coords,fresh=rawFix&&Date.now()-rawFix.timestamp<=10000;$('offset').textContent=Number.isFinite(details.distance)?Math.round(details.distance)+' м':'—';$('speed').textContent=fresh&&Number.isFinite(c.speed)&&c.speed>=0?Math.round(c.speed*3.6)+' км/ч':'—';$('accuracy').textContent=fresh&&Number.isFinite(c.accuracy)?Math.round(c.accuracy)+' м':'—';$('status').textContent=reason;if(fresh&&rawHint&&gps?.isActive()){regime?.previewLive(rawHint.chain);$('gpsPath').textContent='Участок по GPS: '+regime.catalog.routes.find(r=>r.id===regime.state().routeId).name;$('status').textContent=reason+' Участок выбран по GPS; обзор приблизительный.';}else regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
+   lost(reason,details={}){liveFix=null;$('position').textContent='Км/ПК не определён';const c=rawFix?.coords,fresh=rawFix&&Date.now()-rawFix.timestamp<=10000;$('offset').textContent=Number.isFinite(details.distance)?Math.round(details.distance)+' м':'—';$('speed').textContent=fresh&&Number.isFinite(c.speed)&&c.speed>=0?Math.round(c.speed*3.6)+' км/ч':'—';$('accuracy').textContent=fresh&&Number.isFinite(c.accuracy)?Math.round(c.accuracy)+' м':'—';$('status').textContent=reason;if(fresh&&rawHint&&gps?.isActive()){regime?.previewLive(rawHint.chain);$('gpsPath').textContent='Выбранный участок: '+regime.catalog.routes.find(r=>r.id===regime.state().routeId).name;$('status').textContent=reason+' Выбранный участок не меняется; обзор приблизительный.';}else regime?.suspendLive(reason);$('centerLabel').textContent='Просмотр · '+(center/1000).toFixed(1)+' км · не текущая позиция'},
    state(active){$('start').disabled=active||!regime;$('stop').disabled=!active}
   });
   function restartGPS(){if(gps.isActive()){$('start').onclick()}}
@@ -68,7 +73,7 @@
   $('start').disabled=!regime;$('start').onclick=()=>{rawHint=null;rawFix=null;$('gpsDiagnostic').textContent='Ожидаем координаты телефона…';regime?.beginLive();gps.start()};$('stop').onclick=()=>gps.stop();
   window.addEventListener('pagehide',()=>gps.stop());document.addEventListener('visibilitychange',()=>{if(document.hidden)gps.stop('Экран скрыт: GPS приостановлен. Включите следование после возвращения.')});
   render();
-  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1052', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
+  if('serviceWorker'in navigator) navigator.serviceWorker.register('./service-worker.js?v=1067', {updateViaCache:'none'}).then(()=>navigator.serviceWorker.ready).then(updateNetwork).catch(updateNetwork);
   updateNetwork();
  }catch(e){['start','viewRange','stations','go','prev','next','mapPlus','mapMinus','mapAll'].forEach(id=>$(id).disabled=true);showError('Не удалось открыть карту. Подключитесь к сети и повторно откройте раздел. '+e.message);$('status').textContent='База не загружена.'}
  async function updateNetwork(){
