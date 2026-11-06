@@ -338,6 +338,27 @@ function du61DraftFromColumns(speedRows,locationRows,timeRows){
  }
  return {drafts,unresolved};
 }
+function du61WholePhotoRows(result,width){
+ const words=result?.data?.words||[];
+ if(!words.length)return null;
+ const ranges=[
+  {x0:.065,x1:.365},{x0:.365,x1:.505},{x0:.505,x1:.61}
+ ];
+ return ranges.map(range=>{
+  const source=words.filter(w=>{
+   const bb=w.bbox;if(!bb||!w.text?.trim())return false;
+   const mid=(bb.x0+bb.x1)/2/width;
+   return mid>=range.x0&&mid<range.x1;
+  }).map(w=>({y:(w.bbox.y0+w.bbox.y1)/2,x:w.bbox.x0,text:w.text}));
+  const grouped=[];
+  for(const word of source.sort((a,b)=>a.y-b.y||a.x-b.x)){
+   let row=grouped.find(r=>Math.abs(r.y-word.y)<8);
+   if(!row){row={y:word.y,words:[]};grouped.push(row)}
+   row.words.push(word);
+  }
+  return grouped.map(r=>({y:r.y,text:r.words.sort((a,b)=>a.x-b.x).map(w=>w.text).join(' ')}));
+ });
+}
 async function du61Photo(file){
  const T=await script('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','Tesseract');
  const worker=await T.createWorker('rus+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Читаю ДУ-61: '+Math.round((m.progress||0)*100)+'%')}});
@@ -394,7 +415,17 @@ async function du61Photo(file){
    crop.width=0;crop.height=0;
   }
   canvas.width=0;canvas.height=0;
-  const outcome=du61DraftFromColumns(parts[2],parts[0],parts[1]);
+  let outcome=du61DraftFromColumns(parts[2],parts[0],parts[1]);
+  if(outcome.drafts.length===0){
+   status('ДУ-61: дополнительная проверка по полному снимку…');
+   await worker.setParameters({tessedit_char_whitelist:'',tessedit_pageseg_mode:'11'});
+   const full=await withTimeout(worker.recognize(canvas),60000,'Распознавание полного ДУ-61');
+   const columns=du61WholePhotoRows(full,canvas.width);
+   if(columns){
+    const extra=du61DraftFromColumns(columns[2],columns[0],columns[1]);
+    if(extra.drafts.length>outcome.drafts.length)outcome=extra;
+   }
+  }
   if(!outcome.drafts.length)outcome.unresolved.push('Не удалось надёжно сопоставить три колонки ДУ-61. Сфотографируйте ровно и ближе, чтобы таблица заняла большую часть кадра.');
   return {text,drafts:outcome.drafts,unresolved:outcome.unresolved};
  }finally{if(bitmap?.close)bitmap.close();await worker.terminate()}
