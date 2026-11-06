@@ -36,7 +36,7 @@ function rowFromLine(text){
  if(!m)return null;
  const [km1,pk1,km2,pk2,speed]=m.slice(1).map(Number);
  if(km1<5000||km1>9000||km2<5000||km2>9000||speed<1||speed>200||(km1===km2&&pk1===pk2))return null;
- return {km1,pk1,km2,pk2,speed,category:'all',begin:'',endTime:'',untilCancel:false,source:s};
+ return {km1,pk1,km2,pk2,speed,category:'',begin:'',endTime:'',untilCancel:false,source:s};
 }
 function extract(text){
  const lines=String(text||'').split(/\r?\n/);const found=[];
@@ -94,15 +94,15 @@ function showDrafts(){
   const a=candidates[i],card=document.createElement('div');card.className='speedImportDraft';
   card.innerHTML='<label><input type="checkbox" class="impSelected" checked> Строка '+(i+1)+' — проверить</label><div class="speedImportNumbers">'+
    [['km1','Начало км'],['pk1','ПК'],['km2','Конец км'],['pk2','ПК'],['speed','км/ч']].map(([k,label])=>'<label>'+label+'<input data-field="'+k+'" type="text" inputmode="numeric" pattern="[0-9]*" value="'+view(a[k])+'"></label>').join('')+'</div>'+
-   '<label>Категория<select data-field="category"><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>'+
+   '<label>Категория<select data-field="category"><option value="">Выберите</option><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>'+
    (ctx.tab==='temporary'?'<div class="speedImportDates"><label>Начало МСК (необязательно)<input data-field="begin" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.begin)+'"></label><label>Конец МСК (необязательно)<input data-field="endTime" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.endTime)+'"></label><label><input type="checkbox" data-field="untilCancel"> До отмены</label></div>':'')+
    '<small>Источник: '+view(a.source||'Добавлено вручную')+'</small>';
-  card.querySelector('[data-field="category"]').value=a.category||'all';
+  card.querySelector('[data-field="category"]').value=a.category||'';
   list.append(card);
  }
 }
 function handleText(){candidates=extract($('speedImportText').value);showDrafts();status('Найдено строк: '+candidates.length+'. Проверьте все значения перед сохранением.')}
-function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',category:'all',begin:'',endTime:'',source:'ручная корректировка'});showDrafts();status('Заполните новую строку и проверьте исходный документ.')}
+function addManual(){candidates.push({km1:'',pk1:'',km2:'',pk2:'',speed:'',category:'',begin:'',endTime:'',source:'ручная корректировка'});showDrafts();status('Заполните новую строку и проверьте исходный документ.')}
 function readDrafts(){
  if(!ctx.route())throw Error('Сначала выберите участок и направление');
  const route=ctx.route(),out=[];
@@ -115,6 +115,7 @@ function readDrafts(){
   const start=km1*1000+(pk1-1)*100,end=km2*1000+(pk2-1)*100;
   if(start===end)throw Error('Строка '+(i+1)+': одинаковые начало и конец');
   if((end-start)*route.direction<=0)throw Error('Строка '+(i+1)+': границы не соответствуют направлению участка');
+  if(!['all','freight','passenger','empty'].includes(val('category')))throw Error('Строка '+(i+1)+': выберите категорию поезда после проверки документа');
   const begin=ctx.tab==='temporary'?parseMsk(val('begin')):'';
   const endTime=ctx.tab==='temporary'?parseMsk(val('endTime')):'';
   const untilCancel=ctx.tab==='temporary'&&!!get('untilCancel')?.checked;
