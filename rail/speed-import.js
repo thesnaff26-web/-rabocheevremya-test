@@ -427,6 +427,26 @@ function setReviewTab(next){
  if(!['ready','review'].includes(next))return;
  reviewTab=next;refreshReviewTabs();
 }
+function visibleReviewCards(){
+ return [...$('speedImportDrafts').querySelectorAll('.speedImportDraft')]
+  .filter(card=>card.dataset.reviewStatus===reviewTab);
+}
+function toggleCurrentReviewTab(checked){
+ for(const card of visibleReviewCards()){
+  const checkbox=card.querySelector('.impSelected');
+  if(checkbox)checkbox.checked=checked;
+ }
+ refreshSelectAll();showCoverage();
+}
+function refreshSelectAll(){
+ const all=$('speedImportSelectAll'),info=$('speedImportSelectionSummary');
+ if(!all)return;
+ const cards=visibleReviewCards(),selected=cards.filter(card=>card.querySelector('.impSelected')?.checked).length;
+ all.disabled=!cards.length;
+ all.indeterminate=selected>0&&selected<cards.length;
+ all.checked=cards.length>0&&selected===cards.length;
+ if(info)info.textContent='Выбрано '+selected+' из '+cards.length+' в этой вкладке';
+}
 function refreshReviewTabs(){
  const tabs=$('speedImportReviewTabs'),container=$('speedImportDrafts');if(!tabs||!container)return;
  let ready=0,review=0;
@@ -448,6 +468,7 @@ function refreshReviewTabs(){
  }
  const empty=$('speedImportReviewEmpty');
  if(empty){const total=values[reviewTab];empty.hidden=total!==0;empty.textContent=reviewTab==='review'?'Нет записей с обнаруженными ошибками.':'Нет распознанных записей без замечаний.'}
+ refreshSelectAll();
 }
 function showDrafts(){
  const list=$('speedImportDrafts');if(!list)return;
@@ -563,6 +584,7 @@ function setup(options){
  '<div class="speedImportActions"><button type="button" id="speedImportParse">Найти строки</button><button type="button" id="speedImportAddManual">Добавить строку</button><button type="button" id="speedImportClear">Очистить распознанное</button></div>'+
  '<p id="speedImportStatus" role="status"></p><div id="speedImportUnresolved" class="speedImportUnresolved" hidden></div>'+
  '<div id="speedImportReviewTabs" class="speedImportReviewTabs" role="tablist" aria-label="Результаты распознавания"><button type="button" role="tab" data-review-tab="ready" aria-selected="true">Распознаны <span class="speedImportTabCount">0</span></button><button type="button" role="tab" data-review-tab="review" aria-selected="false">На проверку <span class="speedImportTabCount">0</span></button></div>'+
+ '<div class="speedImportSelectBar"><label for="speedImportSelectAll"><input type="checkbox" id="speedImportSelectAll"> Выбрать все в этой вкладке</label><span id="speedImportSelectionSummary" aria-live="polite">Выбрано 0 из 0</span></div>'+
  '<p id="speedImportReviewEmpty" class="speedImportReviewEmpty" hidden></p><div id="speedImportDrafts"></div><div id="speedImportCoverage" class="speedImportCoverage" role="status" hidden></div>'+
  '<label class="speedImportReview"><input type="checkbox" id="speedImportConfirm"> Я сверил выбранные записи с исходным документом, включая направление, км, ПК, скорости и время МСК.</label>'+
  '<button type="button" id="speedImportSave">Сохранить проверенные записи</button>';
@@ -574,6 +596,7 @@ function setup(options){
  $('speedImportSave').onclick=saveDrafts;
  $('speedImportClear').onclick=()=>{clearImportDrafts();status('Распознанный текст и черновики очищены. Сохранённые записи не изменились.')};
  for(const button of wrapper.querySelectorAll('[data-review-tab]'))button.onclick=()=>setReviewTab(button.dataset.reviewTab);
+ $('speedImportSelectAll').onchange=e=>toggleCurrentReviewTab(e.target.checked);
  const draftChange=event=>{
   const card=event.target.closest('.speedImportDraft');
   if(card){
