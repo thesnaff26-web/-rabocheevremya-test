@@ -122,13 +122,35 @@ function speedTripleFromLine(raw,section){
  return {location,section,speeds,range};
 }
 function tableFromOcrText(text,section){
- const drafts=[],unresolved=[];
+ const drafts=[],unresolved=[],sequence=[];
  for(const line of String(text||'').split(/\r?\n/)){
   const data=speedTripleFromLine(line,section);
   if(!data)continue;
-  if(!data.range){unresolved.push(section+': '+data.location+' | '+data.speeds.join('/')+' — требуется ручная проверка км/ПК');continue}
-  for(const [i,category] of ['passenger','freight','empty'].entries()){
-   drafts.push({...data.range,speed:data.speeds[i],category,begin:'',endTime:'',untilCancel:false,source:section+' · '+data.location+' | '+['Пас','ГР','Пор'][i]+' '+data.speeds[i]+' [фото, проверьте]'});
+  sequence.push({...data,boundary:stationBoundary(data.location)});
+ }
+ const route=ctx?.route?.()||null;
+ const categories=['passenger','freight','empty'];
+ for(let i=0;i<sequence.length;i++){
+  const row=sequence[i];
+  for(const [j,category] of categories.entries()){
+   const speed=row.speeds[j];let range=row.range;
+   if(!range&&row.boundary?.kind==='toStation'){
+    const next=sequence[i+1];
+    if(next?.boundary?.kind==='fromStation'&&
+       next.boundary.station===row.boundary.station&&next.speeds[j]===speed){
+     range={km1:row.boundary.numeric.km,pk1:row.boundary.numeric.pk,
+      km2:next.boundary.numeric.km,pk2:next.boundary.numeric.pk};
+    }
+   }else if(!range&&row.boundary?.kind==='fromStation'){
+    const prev=sequence[i-1];
+    if(prev?.boundary?.kind==='toStation'&&prev.boundary.station===row.boundary.station&&prev.speeds[j]===speed)continue;
+   }
+   if(!range&&row.boundary){
+    drafts.push(draftFromBoundary(row.boundary,category,speed,section,row.location,route));continue;
+   }
+   if(!range){unresolved.push(section+': '+row.location+' | '+row.speeds.join('/')+' — строка не имеет распознаваемых станционных или числовых границ');continue}
+   drafts.push({...range,speed,category,begin:'',endTime:'',untilCancel:false,
+     source:section+' · '+row.location+' | '+['Пас','ГР','Пор'][j]+' '+speed+' [фото, проверьте]'});
   }
  }
  return {drafts,unresolved};
@@ -195,7 +217,6 @@ function tableFromPdfItems(items,pageHeight,pageWidth=595){
      // Do not discard station-boundary rows. Make editable review drafts.
      const partial=draftFromBoundary(row.boundary,category,speed,row.section,row.location,route);
      drafts.push(partial);
-     pending.push(row.section+': '+row.location+' / '+category+' — станционная граница для проверки');
      continue;
     }
     drafts.push({...range,speed,category,begin:'',endTime:'',untilCancel:false,
@@ -380,11 +401,12 @@ function draftProblems(a,route){
 }
 function draftFromCard(card){
  const value=k=>card.querySelector('[data-field="'+k+'"]')?.value.trim()||'';
- return {km1:value('km1'),pk1:value('pk1'),km2:value('km2'),pk2:value('pk2'),speed:value('speed'),category:value('category'),
+ return {stationHint:card.dataset.stationHint||'',km1:value('km1'),pk1:value('pk1'),km2:value('km2'),pk2:value('pk2'),speed:value('speed'),category:value('category'),
    begin:value('begin'),endTime:value('endTime'),untilCancel:!!card.querySelector('[data-field="untilCancel"]')?.checked};
 }
 function issuesForDraft(a,route){
  const issues=draftProblems(a,route);
+ if(a.stationHint&&(!a.km1||!a.pk1||!a.km2||!a.pk2))issues.push('уточните станционную границу по официальному источнику');
  if(!/^\d{4}$/.test(a.km1)||!/^(10|[1-9])$/.test(a.pk1))issues.push('проверьте начало км/ПК');
  if((a.km2||a.pk2)&&(!/^\d{4}$/.test(a.km2)||!/^(10|[1-9])$/.test(a.pk2)))issues.push('проверьте конец км/ПК');
  if(!/^\d{1,3}$/.test(String(a.speed))||+a.speed<1||+a.speed>200)issues.push('проверьте скорость');
@@ -436,6 +458,7 @@ function showDrafts(){
    '<label>Категория<select data-field="category"><option value="">Выберите</option><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>'+
    (ctx.tab==='temporary'?'<div class="speedImportDates"><label>Начало МСК (необязательно)<input data-field="begin" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.begin)+'"></label><label>Конец МСК (необязательно)<input data-field="endTime" type="text" placeholder="ДД.ММ.ГГГГ ЧЧ:ММ" value="'+view(a.endTime)+'"></label><label><input type="checkbox" data-field="untilCancel"> До отмены</label></div>':'')+
    '<small>Источник: '+view(a.source||'Добавлено вручную')+'</small>';
+  card.dataset.stationHint=a.stationHint||'';
   card.querySelector('[data-field="category"]').value=a.category||'';
   list.append(card);
  }
@@ -453,6 +476,7 @@ function readDrafts(){
   const val=k=>get(k)?.value.trim()||'';
   const km1=+val('km1'),pk1=+val('pk1'),km2=+val('km2'),pk2=+val('pk2'),speed=+val('speed');
   const hasEnd=val('km2')!==''||val('pk2')!=='';
+  if(card.dataset.stationHint&&!hasEnd)throw Error('Строка '+(i+1)+': подтвердите точную станционную границу; точечную отметку вместо ограничения сохранять нельзя');
   if(!/^\d{4}$/.test(val('km1'))||!(pk1>=1&&pk1<=10)||!Number.isInteger(pk1)||
     (hasEnd&&(!/^\d{4}$/.test(val('km2'))||!Number.isInteger(pk2)||pk2<1||pk2>10))||
     !Number.isInteger(speed)||speed<1||speed>200)throw Error('Строка '+(i+1)+': проверьте км, ПК и скорость');
