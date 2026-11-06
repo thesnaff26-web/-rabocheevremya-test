@@ -64,7 +64,10 @@ function extract(text){
 /* Extract actual columns from digital railway-table PDFs.
    Never guess station-to-kilometre endpoints from a station name. */
 function stationlessRange(raw){
- const s=String(raw||'').trim().replace(/[—–−]/g,'-').replace(/\s*\([^)]*\)\s*$/,'').replace(/\s+/g,'');
+ const normalized=String(raw||'').trim().replace(/[—–−]/g,'-').replace(/\s*\([^)]*\)\s*$/,'');
+ // Preserve a complete numerical PK interval even if the station name follows it.
+ const prefix=normalized.match(/^([0-9]{4}\s*пк\s*(?:10|[1-9])\s*-\s*(?:(?:[0-9]{4}\s*пк\s*)?(?:10|[1-9])))(?=\s|[а-яё]|$)/i);
+ const s=(prefix?prefix[1]:normalized).replace(/\s+/g,'');
  const m=s.match(/^(\d{4})пк(10|[1-9])(?:-(?:(\d{4})пк)?(10|[1-9]))?$/i);
  if(!m)return null;
  const a=+m[1],pk1=+m[2],b=m[4]?(m[3]?+m[3]:a):null,pk2=m[4]?+m[4]:null;
