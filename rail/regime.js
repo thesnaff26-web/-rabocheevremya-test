@@ -70,8 +70,24 @@
    }catch(e){if(id!==loadId||e.name==='AbortError')return;message('Лист не открыт: '+e.message+' Если сети нет, заранее сохраните эту режимку офлайн.');$('regimeImage').hidden=true;leaf=null}
   }
   function scrollLive(){if(!leaf?.route)return;const fraction=(chain-leaf.start)/(leaf.end-leaf.start),across=activeRoute().direction===1?fraction:1-fraction;$('regimeViewport').scrollLeft=Math.max(0,(.06+.87*across)*width-$('regimeViewport').clientWidth/2)}
+  function autoChooseCorridor(m){
+   // Two source PDFs overlap around Mogocha; retaining the previous document
+   // forever made the eastbound run Mogocha -> Urusha show Cherny -> Mogocha.
+   // A guard zone prevents oscillation in the shared km range.
+   const current=activeRoute(),direction=current?.direction;
+   if(direction!==1&&direction!==-1)return;
+   const targetDocument=m>=6910000?'urusha':m<=6904000?'chernyshevsk':null;
+   if(!targetDocument||current.document===targetDocument)return;
+   const candidate=catalog.routes.find(r=>r.document===targetDocument&&r.direction===direction&&r.start<=m&&m<r.end);
+   if(!candidate)return;
+   routeId=candidate.id;
+   $('regimeRoute').value=routeId;
+   fillPages();
+  }
   function go(m,options={}){
-   positionQuality=options.quality||null;positionMode=options.live?'gps':'manual';overviewOnly=!!options.preview;liveConfirmed=!!options.live&&!overviewOnly;chain=m;inputPosition(m);let result=RC.find(catalog,routeId,m);
+   positionQuality=options.quality||null;positionMode=options.live?'gps':'manual';overviewOnly=!!options.preview;liveConfirmed=!!options.live&&!overviewOnly;chain=m;inputPosition(m);
+   if(options.live)autoChooseCorridor(m);
+   let result=RC.find(catalog,routeId,m);
    if(result.status==='missing'){
     const alternate=RC.autoRoute(catalog,routeId,m);
     if(alternate){const old=activeRoute().document;routeId=alternate.id;$('regimeRoute').value=routeId;if(old!==alternate.document)fillPages();result=RC.find(catalog,routeId,m)}
