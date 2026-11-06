@@ -2,7 +2,7 @@
 'use strict';
 // User-managed, offline-only rail speed annotations. No operational values are inferred.
 const KEY='rail-user-speeds-v1', $=id=>document.getElementById(id);
-let records=[],route=null,category='freight',shown={permanent:true,temporary:true,tp:true},rerender=()=>{};
+let records=[],route=null,category='freight',selectedTab='permanent',shown={permanent:true,temporary:true,tp:true},rerender=()=>{};
 try { const a=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(a))records=a.filter(valid); } catch(e){console.warn('Скорости: база недоступна',e);}
 function valid(a){return a&&typeof a.id==='string'&&typeof a.routeId==='string'&&['permanent','temporary','tp'].includes(a.type)&&Number.isFinite(a.start)&&(a.type==='tp'?(Number.isFinite(a.lower)&&Number.isFinite(a.raise)):((a.end==null||Number.isFinite(a.end))&&Number.isFinite(a.speed)&&a.speed>0));}
 function persist(){localStorage.setItem(KEY,JSON.stringify(records));rerender();list();}
@@ -16,13 +16,35 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function prettyMsk(value){const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);return m?m[3]+'.'+m[2]+'.'+m[1]+' · '+m[4]+':'+m[5]+' МСК':String(value||'');}
 function point(a){if(!Number.isFinite(a))return 'граница не указана';const km=Math.floor(a/1000),pk=Math.floor(a%1000/100)+1;return km+' км ПК'+pk;}
 function categoryName(s){return {passenger:'Пассажирский',freight:'Грузовой',empty:'Порожний',all:'Все'}[s]||s;}
+function setTab(type,resetForm=true){
+ if(!['permanent','temporary','tp'].includes(type))return;
+ selectedTab=type;
+ const f=$('userSpeedForm');
+ if(f&&resetForm){f.reset();f.elements.uid.value='';f.elements.kind.value=type;toggle();syncTimeButtons();}
+ list();
+}
 function list(){
- const el=$('userSpeedList');if(!el)return;const selection=records.filter(a=>!route||a.routeId===route.id);
- el.innerHTML=selection.length?selection.map(a=>'<div class="userSpeedItem"><div><b>'+esc(a.type==='tp'?'ТП · 3 точки':a.speed+' км/ч')+'</b> · '+esc(a.type==='permanent'?'Постоянная':a.type==='temporary'?'Временная':'Токоприёмник')+'<small>'+esc(point(a.start))+(a.type==='tp'?' → '+point(a.lower)+' → '+point(a.raise):a.end==null?' · конец не указан':' — '+point(a.end))+' · '+esc(a.category==='all'?'Все категории':categoryName(a.category||'all'))+(a.begin?' · '+esc(prettyMsk(a.begin)):'')+(a.type==='permanent'?'':' · '+statusLabel(a))+'</small></div><div><button type="button" data-edit="'+esc(a.id)+'">Править</button><button type="button" data-del="'+esc(a.id)+'">Удалить</button></div></div>').join(''):'<p class="userSpeedEmpty">Пока ничего не загружено. Поле скоростей на профиле пустое.</p>';
+ const el=$('userSpeedList');if(!el)return;
+ const sameRoute=records.filter(a=>!route||a.routeId===route.id);
+ const selection=sameRoute.filter(a=>a.type===selectedTab);
+ const names={permanent:'Постоянные скорости',temporary:'Временные предупреждения',tp:'Опускание ТП'};
+ const counters={permanent:0,temporary:0,tp:0};
+ for(const record of sameRoute)counters[record.type]=(counters[record.type]||0)+1;
+ for(const b of document.querySelectorAll('#userSpeedTabs [data-tab]')){
+  const type=b.dataset.tab,selected=type===selectedTab;
+  b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));b.setAttribute('tabindex',selected?'0':'-1');
+  const count=b.querySelector('.userSpeedCount');if(count)count.textContent=String(counters[type]||0);
+ }
+ const heading=$('userSpeedListTitle');if(heading)heading.textContent=names[selectedTab];
+ const addTitle=$('userSpeedAddTitle');if(addTitle)addTitle.textContent='Добавить / изменить: '+names[selectedTab].toLowerCase();
+ if($('userSpeedForm')&&!$('userSpeedForm').elements.uid.value&&$('userSpeedForm').elements.kind.value!==selectedTab){
+  $('userSpeedForm').elements.kind.value=selectedTab;toggle();
+ }
+ el.innerHTML=selection.length?selection.map(a=>'<div class="userSpeedItem"><div><b>'+esc(a.type==='tp'?'ТП · 3 точки':a.speed+' км/ч')+'</b> · '+esc(a.type==='permanent'?'Постоянная':a.type==='temporary'?'Временная':'Токоприёмник')+'<small>'+esc(point(a.start))+(a.type==='tp'?' → '+point(a.lower)+' → '+point(a.raise):a.end==null?' · конец не указан':' — '+point(a.end))+' · '+esc(a.category==='all'?'Все категории':categoryName(a.category||'all'))+(a.begin?' · '+esc(prettyMsk(a.begin)):'')+(a.type==='permanent'?'':' · '+statusLabel(a))+'</small></div><div><button type="button" data-edit="'+esc(a.id)+'">Править</button><button type="button" data-del="'+esc(a.id)+'">Удалить</button></div></div>').join(''):'<p class="userSpeedEmpty">В разделе «'+esc(names[selectedTab])+'» пока нет записей.</p>';
  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Удалить эту запись?')){records=records.filter(a=>a.id!==b.dataset.del);persist()}});
  el.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(b.dataset.edit));
 }
-function edit(id){const a=records.find(x=>x.id===id);if(!a)return;const f=$('userSpeedForm');f.elements.uid.value=a.id;f.elements.kind.value=a.type;f.elements.train.value=a.category||'all';f.elements.speed.value=a.speed??'';f.elements.km1.value=Math.floor(a.start/1000);f.elements.pk1.value=Math.floor(a.start%1000/100)+1;f.elements.km2.value=a.end!=null?Math.floor(a.end/1000):'';f.elements.pk2.value=a.end!=null?Math.floor(a.end%1000/100)+1:'';f.elements.tpKm2.value=Math.floor((a.lower??a.end)/1000);f.elements.tpPk2.value=Math.floor((a.lower??a.end)%1000/100)+1;f.elements.km3.value=Math.floor((a.raise??a.end??a.start)/1000);f.elements.pk3.value=Math.floor((a.raise??a.end??a.start)%1000/100)+1;f.elements.pole1.value=a.pole1||'';f.elements.pole2.value=a.pole2||'';f.elements.pole3.value=a.pole3||'';f.elements.begin.value=a.begin||'';f.elements.endTime.value=a.endTime||'';f.elements.untilCancel.checked=!!a.untilCancel;toggle();syncTimeButtons();$('userSpeedManager').open=true;f.scrollIntoView({block:'nearest',behavior:'smooth'});}
+function edit(id){const a=records.find(x=>x.id===id);if(!a)return;setTab(a.type,false);const f=$('userSpeedForm');f.elements.uid.value=a.id;f.elements.kind.value=a.type;f.elements.train.value=a.category||'all';f.elements.speed.value=a.speed??'';f.elements.km1.value=Math.floor(a.start/1000);f.elements.pk1.value=Math.floor(a.start%1000/100)+1;f.elements.km2.value=a.end!=null?Math.floor(a.end/1000):'';f.elements.pk2.value=a.end!=null?Math.floor(a.end%1000/100)+1:'';f.elements.tpKm2.value=Math.floor((a.lower??a.end)/1000);f.elements.tpPk2.value=Math.floor((a.lower??a.end)%1000/100)+1;f.elements.km3.value=Math.floor((a.raise??a.end??a.start)/1000);f.elements.pk3.value=Math.floor((a.raise??a.end??a.start)%1000/100)+1;f.elements.pole1.value=a.pole1||'';f.elements.pole2.value=a.pole2||'';f.elements.pole3.value=a.pole3||'';f.elements.begin.value=a.begin||'';f.elements.endTime.value=a.endTime||'';f.elements.untilCancel.checked=!!a.untilCancel;toggle();syncTimeButtons();$('userSpeedManager').open=true;f.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function toggle(){const f=$('userSpeedForm'),tp=f.elements.kind.value==='tp',perm=f.elements.kind.value==='permanent';$('userTpFields').hidden=!tp;$('userEndFields').hidden=tp;$('userSpeedFields').hidden=tp;$('userTimeFields').hidden=perm;$('userEndTime').hidden=f.elements.untilCancel.checked;f.elements.speed.disabled=tp;f.elements.km2.disabled=tp;f.elements.pk2.disabled=tp;f.elements.tpKm2.disabled=!tp;f.elements.tpPk2.disabled=!tp;f.elements.km3.disabled=!tp;f.elements.pk3.disabled=!tp;}
 
 function syncTimeButtons(){const f=$('userSpeedForm');if(!f)return;for(const key of ['begin','endTime']){const b=document.querySelector('#userSpeedForm [data-time="'+key+'"]');if(b)b.textContent=f.elements[key].value?prettyMsk(f.elements[key].value):'Выбрать дату и время';}}
@@ -78,9 +100,13 @@ function init(){
  <p class="small">По умолчанию скорости отсутствуют. Данные хранятся на этом устройстве и не заменяют действующие официальные предупреждения. Время — только МСК.</p>
  <div class="userSpeedOptions"><label><input id="userShowPerm" type="checkbox" checked> Постоянные</label><label><input id="userShowTemp" type="checkbox" checked> Временные</label><label><input id="userShowTp" type="checkbox" checked> Токоприёмники</label></div>
  <label>Категория поезда для профиля<select id="userSpeedCategory"><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>
- <h3>Мои записи для выбранного пути</h3><div id="userSpeedList"></div>
- <form id="userSpeedForm"><h3>Добавить / изменить запись</h3><input type="hidden" name="uid">
- <label>Тип<select name="kind"><option value="permanent">Постоянная скорость</option><option value="temporary">Временная скорость</option><option value="tp">Опускание токоприёмников</option></select></label>
+ <div class="userSpeedTabs" id="userSpeedTabs" role="tablist" aria-label="Разделы скоростей и предупреждений">
+ <button type="button" role="tab" data-tab="permanent" aria-selected="true"><span>Постоянные скорости</span><span class="userSpeedCount">0</span></button>
+ <button type="button" role="tab" data-tab="temporary" aria-selected="false"><span>Временные предупреждения</span><span class="userSpeedCount">0</span></button>
+ <button type="button" role="tab" data-tab="tp" aria-selected="false"><span>Опускание ТП</span><span class="userSpeedCount">0</span></button></div>
+ <h3 id="userSpeedListTitle">Постоянные скорости</h3><div id="userSpeedList" role="tabpanel"></div>
+ <form id="userSpeedForm"><h3 id="userSpeedAddTitle">Добавить / изменить: постоянные скорости</h3><input type="hidden" name="uid">
+ <input name="kind" type="hidden" value="permanent">
  <label>Категория поезда<select name="train"><option value="all">Все</option><option value="freight">Грузовой</option><option value="passenger">Пассажирский</option><option value="empty">Порожний</option></select></label>
  <div id="userSpeedFields"><label>Скорость, км/ч<input name="speed" type="number" min="1" max="200" step="1" required></label></div>
  <div class="userSpeedGrid"><label>Начало · км<input name="km1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" min="5000" max="9000" required></label><label>ПК<input name="pk1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="2" min="1" max="10" required></label></div>
@@ -108,8 +134,9 @@ function init(){
   const field=f.elements[name];
   field.addEventListener('input',()=>{const only=field.value.replace(/[^0-9]/g,'');if(field.value!==only)field.value=only.slice(0,field.maxLength>0?field.maxLength:undefined)});
  }
- const clear=()=>{f.reset();f.elements.uid.value='';toggle();syncTimeButtons()};
- f.elements.kind.onchange=()=>{toggle()};f.elements.untilCancel.onchange=toggle;$('userClearForm').onclick=clear;
+ const clear=()=>{f.reset();f.elements.uid.value='';f.elements.kind.value=selectedTab;toggle();syncTimeButtons()};
+ for(const btn of wrap.querySelectorAll('#userSpeedTabs [data-tab]'))btn.onclick=()=>setTab(btn.dataset.tab);
+ f.elements.untilCancel.onchange=toggle;$('userClearForm').onclick=clear;
  $('userMoscowSet').onclick=()=>{f.elements.begin.value=nowMoscow();syncTimeButtons();$('userSpeedStatus').textContent='Начало выставлено по МСК'};
  $('userMoscowNow').textContent='Сейчас в Москве: '+prettyMsk(nowMoscow())+'. Вводите московское, не местное время телефона.';
  f.onsubmit=e=>{e.preventDefault();try{if(!route)throw Error('Сначала выберите путь');const type=f.elements.kind.value,start=metres(f.elements.km1.value,f.elements.pk1.value),end=type==='tp'?metres(f.elements.tpKm2.value,f.elements.tpPk2.value):(f.elements.km2.value!==''&&f.elements.pk2.value!==''?metres(f.elements.km2.value,f.elements.pk2.value):null),raise=type==='tp'?metres(f.elements.km3.value,f.elements.pk3.value):null;if(type!=='tp'&&(f.elements.km2.value!==''||f.elements.pk2.value!=='')&&end===null)throw Error('Заполните обе границы конца или оставьте их пустыми');const speed=type==='tp'?null:Number(f.elements.speed.value);if(type!=='tp'&&!(speed>=1&&speed<=200))throw Error('Неверная скорость');if(type!=='tp'&&end!==null&&start===end)throw Error('Укажите разные границы');if(type==='tp'&&(new Set([start,end,raise]).size!==3))throw Error('Укажите три разные точки');if(type==='tp'&&!((end-start)*route.direction>0&&(raise-end)*route.direction>0))throw Error('Точки ТП должны идти последовательно по выбранному направлению');const begin=f.elements.begin.value,endTime=f.elements.endTime.value,untilCancel=f.elements.untilCancel.checked;if(type!=='permanent'&&endTime&&!begin)throw Error('Для времени окончания укажите начало действия МСК');if(type!=='permanent'&&!untilCancel&&begin&&endTime&&stamp(endTime)<stamp(begin))throw Error('Конец раньше начала');const id=f.elements.uid.value||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2));const a={id,routeId:route.id,type,category:f.elements.train.value,start,end:type==='tp'?undefined:end,lower:type==='tp'?end:undefined,raise,speed,pole1:f.elements.pole1.value,pole2:f.elements.pole2.value,pole3:f.elements.pole3.value,begin:type==='permanent'?'':begin,endTime:type==='permanent'?'':(untilCancel?'':endTime),untilCancel:type==='permanent'?false:untilCancel};records=records.filter(x=>x.id!==id);records.push(a);persist();clear();$('userSpeedStatus').textContent='Сохранено офлайн';}catch(err){$('userSpeedStatus').textContent=err.message;}};
