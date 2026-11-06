@@ -73,8 +73,8 @@
 #userSpeedManager .userTimeFoot{margin-top:14px}
 
 /* iOS Safari does not auto-zoom focused editable fields when font >=16px. */
-#userSpeedManager input:not([type=checkbox]):not([type=hidden]),
 #userSpeedManager select,
-#userSpeedManager textarea{font-size:16px!important}
+#userSpeedManager textarea,
+#userSpeedManager input:not([type=checkbox]):not([type=hidden]):not([inputmode=numeric]){font-size:16px!important}
 #userSpeedManager .userTimePick{font-size:18px!important;line-height:1.3}
 #userSpeedManager .userWheelItem{font-size:20px!important}
