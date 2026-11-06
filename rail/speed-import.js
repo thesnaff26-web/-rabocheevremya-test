@@ -389,14 +389,17 @@ function showCoverage(){
 }
 function draftProblems(a,route){
  const out=[];
- const start=Number(a.km1)*1000+(Number(a.pk1)-1)*100;
- const end=a.km2!==''&&a.pk2!==''?Number(a.km2)*1000+(Number(a.pk2)-1)*100:null;
+ const hasStart=a.km1!==''&&a.km1!=null&&a.pk1!==''&&a.pk1!=null;
+ const hasEnd=a.km2!==''&&a.km2!=null&&a.pk2!==''&&a.pk2!=null;
+ const validStart=hasStart&&/^\d{4}$/.test(String(a.km1))&&/^(10|[1-9])$/.test(String(a.pk1));
+ const validEnd=hasEnd&&/^\d{4}$/.test(String(a.km2))&&/^(10|[1-9])$/.test(String(a.pk2));
+ const start=validStart?Number(a.km1)*1000+(Number(a.pk1)-1)*100:null;
+ const end=validEnd?Number(a.km2)*1000+(Number(a.pk2)-1)*100:null;
  if(!route)return out;
- if(!Number.isFinite(start)||start<route.start||start>=route.end)out.push('начало вне выбранного маршрута');
- if(end!==null){
-  if(!Number.isFinite(end)||end<route.start||end>route.end)out.push('конец вне выбранного маршрута');
-  if((end-start)*route.direction<=0)out.push('границы против направления движения');
- }else out.push('отсутствует конечная граница — отображается только точка');
+ if(start!==null&&(start<route.start||start>=route.end))out.push('начало вне выбранного маршрута');
+ if(end!==null&&(end<route.start||end>route.end))out.push('конец вне выбранного маршрута');
+ if(start!==null&&end!==null&&(end-start)*route.direction<=0)out.push('границы против направления движения');
+ if(!hasEnd&&!a.stationHint)out.push('отсутствует конечная граница — отображается только точка');
  return out;
 }
 function draftFromCard(card){
