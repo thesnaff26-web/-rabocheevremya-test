@@ -41,3 +41,22 @@
 #userSpeedManager .userTimeFoot{display:flex;gap:9px}
 #userSpeedManager .userTimeFoot button{flex:1;background:#1d364c;border:1px solid #4d6980;color:#f7fafc;border-radius:10px;padding:11px}
 #userSpeedManager input[type=hidden]{display:none}
+
+/* Larger readable numerical entry fields for kilometre, picket and support numbers. */
+#userSpeedForm input[name="km1"],#userSpeedForm input[name="km2"],
+#userSpeedForm input[name="km3"],#userSpeedForm input[name="tpKm2"],
+#userSpeedForm input[name="pk1"],#userSpeedForm input[name="pk2"],
+#userSpeedForm input[name="pk3"],#userSpeedForm input[name="tpPk2"],
+#userSpeedForm input[name="pole1"],#userSpeedForm input[name="pole2"],
+#userSpeedForm input[name="pole3"]{
+ font-size:23px!important;font-weight:750!important;font-variant-numeric:tabular-nums;
+ min-height:55px;padding:10px 13px!important;letter-spacing:.35px;
+ color:#112638;background:#f0f5f8;border-radius:12px;text-align:center;
+}
+#userSpeedForm input[name^="pole"]{text-align:left}
+#userSpeedForm .userSpeedGrid{grid-template-columns:minmax(0,1.75fr) minmax(84px,.9fr);gap:10px}
+#userSpeedForm .userSpeedGrid label{min-width:0}
+#userSpeedForm label{font-size:14px!important;line-height:1.35;margin-top:12px}
+#userSpeedForm .userSpeedGrid input:focus,#userSpeedForm input[name^="pole"]:focus{
+ outline:3px solid #4b9dff;outline-offset:1px;
+}
