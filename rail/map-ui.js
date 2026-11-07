@@ -25,7 +25,7 @@ function ready(){
  $('mapAddWarning').onclick=()=>{show('warnings');const m=manager();if(m){m.open=true;const f=$('userSpeedForm');if(f){$('userClearForm')?.click();f.scrollIntoView({behavior:'smooth',block:'start'});f.querySelector('[name="speed"]')?.focus({preventScroll:true})}}};
  $('mapOpenList').onclick=()=>{show('warnings');$('userSpeedTabs')?.scrollIntoView({behavior:'smooth',block:'start'})};
  const sync=()=>{const m=manager();if(!m)return;if(m.dataset.mapQuickReady!=='1'){m.dataset.mapQuickReady='1';m.hidden=current!=='warnings';m.open=current==='warnings';const form=$('userSpeedForm');if(form){const top=document.createElement('div');top.className='mapFormIntro';top.innerHTML='<span>НОВАЯ ЗАПИСЬ</span><p>Заполните данные предупреждения и сохраните его для выбранного направления.</p>';form.prepend(top)}}
- const c=$('mapWarningCount');if(c){const counts=[...m.querySelectorAll('.userSpeedCount')].map(x=>Number(x.textContent)||0);c.textContent=String(counts.reduce((a,b)=>a+b,0));}
+ const c=$('mapWarningCount');if(c){const counts=[...m.querySelectorAll('.userSpeedCount')].map(x=>Number(x.textContent)||0);const next=String(counts.reduce((a,b)=>a+b,0));if(c.textContent!==next)c.textContent=next;}
  };
  new MutationObserver(sync).observe(document.body,{childList:true,subtree:true,characterData:true});sync();
  show('profile');
