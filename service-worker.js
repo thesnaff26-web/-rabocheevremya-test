@@ -1,7 +1,7 @@
-const CACHE = 'rabochee-vremya-v89-fresh-map-interface-20261107';
+const CACHE = 'rabochee-vremya-v90-map-workspace-20261107';
 const PREFIX = 'rabochee-vremya-v';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
-const RAIL = ['./track-profile.html', './privacy.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/user-speeds.js', './rail/driver-profile.css'];
+const RAIL = ['./track-profile.html', './privacy.html', './rail/core.js', './rail/map.js', './rail/app.js', './rail/corridor.json', './rail/gps.js', './rail/calibration.js', './rail/geometry.js', './rail/route-geometry.geojson', './rail/regime-core.js', './rail/regime.js', './rail/offline-pages.js', './rail/regime-catalog.json', './rail/driver-profile.js', './rail/user-speeds.js', './rail/driver-profile.css', './rail/map-ui.js', './rail/map-ui.css'];
 const INDEX = './index.html';
 
 async function fetchFresh(input, timeoutMs = 5000, consume = false) {
