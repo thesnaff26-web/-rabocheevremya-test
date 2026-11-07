@@ -179,7 +179,7 @@
   el.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(down&&Math.abs(e.clientX-down.x)>10)moved=true});
   function release(e,cancel=false){if(!pointers.has(e.pointerId))return;
    if(pointers.size===2&&pinch){const a=[...pointers.values()],dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(!cancel&&Math.abs(dist-pinch)>15){const scales=[3000,5000,10000,20000];let i=scales.indexOf(span);span=scales[Math.max(0,Math.min(3,i+(dist>pinch?-1:1)))];host.querySelector(`[data-span="${span/1000}"]`).click()}pinch=null;down=null}
-   else if(!cancel&&down){const dx=e.clientX-down.x,dy=e.clientY-down.y;if(moved&&Math.abs(dx)>25&&Math.abs(dx)>Math.abs(dy)){follow=false;center=Math.max(route.start,Math.min(route.end-1,center-dx/el.clientWidth*span*route.direction));render()}}pointers.delete(e.pointerId);if(!pointers.size)down=null;
+   else if(!cancel&&down){const dx=e.clientX-down.x,dy=e.clientY-down.y;if(moved&&Math.abs(dx)>25&&Math.abs(dx)>Math.abs(dy)){follow=false;center=Math.max(route.start,Math.min(route.end-1,center-dx/el.clientWidth*span*route.direction));render()}else if(!moved&&Math.abs(dx)<12&&Math.abs(dy)<12){root.UserSpeeds?.selectAt?.(el,e.clientX,e.clientY)}}pointers.delete(e.pointerId);if(!pointers.size)down=null;
   }
   el.addEventListener('pointerup',e=>release(e));el.addEventListener('pointercancel',e=>release(e,true));el.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();shift(e.key==='ArrowRight'?1:-1)}};
   $('driverCloseDetail').onclick=()=>{selection=null;$('driverDetail').hidden=true;chart(el,range(center,span))};
