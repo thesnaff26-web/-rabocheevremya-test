@@ -1,36 +1,62 @@
-/* Mobile electronic-map controls. Does not alter route or warning data. */
+/* Electronic map: two clear screens, one action per task. */
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-function ready(){
- const panel=$('driverPanel');if(!panel||$('mapQuickNav'))return;
- const nav=document.createElement('nav');
- nav.id='mapQuickNav';nav.setAttribute('aria-label','Разделы электронной карты');
- nav.innerHTML='<div class="mapQuickTabs" role="group" aria-label="Режим просмотра"><button type="button" data-view="profile" class="selected" aria-pressed="true">⌁ <span>Профиль</span></button><button type="button" data-view="warnings" aria-pressed="false">⚠ <span>Предупреждения</span><b id="mapWarningCount" aria-label="Количество записей">0</b></button><button type="button" data-view="gps" aria-pressed="false">◎ <span>GPS</span></button></div><div class="mapQuickActions" id="mapQuickActions"><button type="button" id="mapAddWarning" class="mapQuickPrimary">＋ Добавить предупреждение</button><button type="button" id="mapOpenList">Список</button></div>';
- panel.parentNode.insertBefore(nav,panel);
- const manager=()=> $('userSpeedManager');
- const views={profile:panel,gps:$('gpsSettings')};
- let current='profile';
- function show(view){
-  current=view;
-  for(const b of nav.querySelectorAll('[data-view]')){const on=b.dataset.view===view;b.classList.toggle('selected',on);b.setAttribute('aria-pressed',String(on))}
-  panel.hidden=view!=='profile';
-  $('gpsSettings').hidden=view!=='gps';
-  const m=manager();if(m){m.hidden=view!=='warnings';if(view==='warnings')m.open=true}
-  $('mapQuickActions').hidden=view!=='profile';
-  if(view==='profile')window.dispatchEvent(new Event('resize'));
-  if(view==='warnings'&&!m)window.setTimeout(()=>show('warnings'),250);
+function init(){
+ const profile=$('driverPanel'),gps=$('gpsSettings');
+ if(!profile||$('mapQuickNav'))return;
+ const nav=document.createElement('nav');nav.id='mapQuickNav';nav.setAttribute('aria-label','Электронная карта');
+ nav.innerHTML='<div class="mapQuickTabs"><button type="button" data-view="profile" class="selected" aria-pressed="true">Профиль пути</button><button type="button" data-view="warnings" aria-pressed="false">Предупреждения <span id="mapWarningCount">0</span></button></div>';
+ profile.before(nav);
+ const manager=()=>$('userSpeedManager');
+ let view='profile',initialized=false;
+ function show(which){
+  view=which;
+  nav.querySelectorAll('[data-view]').forEach(b=>{const active=b.dataset.view===which;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
+  profile.hidden=which!=='profile';
+  if(gps)gps.hidden=which!=='profile';
+  const m=manager();if(m){m.hidden=which!=='warnings';if(which==='warnings')m.open=true}
+  const stations= $('nearStations')?.closest('section');if(stations)stations.hidden=which!=='profile';
+  if(which==='profile')requestAnimationFrame(()=>window.dispatchEvent(new Event('resize')));
+  if(which==='warnings'&&!m)setTimeout(()=>show('warnings'),250);
  }
- nav.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.view)));
- $('mapAddWarning').onclick=()=>{show('warnings');const m=manager();if(m){m.open=true;const f=$('userSpeedForm');if(f){$('userClearForm')?.click();f.scrollIntoView({behavior:'smooth',block:'start'});f.querySelector('[name="speed"]')?.focus({preventScroll:true})}}};
- $('mapOpenList').onclick=()=>{show('warnings');$('userSpeedTabs')?.scrollIntoView({behavior:'smooth',block:'start'})};
- const sync=()=>{const m=manager();if(!m)return;if(m.dataset.mapQuickReady!=='1'){m.dataset.mapQuickReady='1';m.hidden=current!=='warnings';m.open=current==='warnings';const form=$('userSpeedForm');if(form){const top=document.createElement('div');top.className='mapFormIntro';top.innerHTML='<span>НОВАЯ ЗАПИСЬ</span><p>Заполните данные предупреждения и сохраните его для выбранного направления.</p>';form.prepend(top)}}
- const c=$('mapWarningCount');if(c){const counts=[...m.querySelectorAll('.userSpeedCount')].map(x=>Number(x.textContent)||0);const next=String(counts.reduce((a,b)=>a+b,0));if(c.textContent!==next)c.textContent=next;}
- };
- new MutationObserver(sync).observe(document.body,{childList:true,subtree:true,characterData:true});sync();
- show('profile');
- const selected=localStorage.getItem('theme')||localStorage.getItem('app-theme')||localStorage.getItem('rv-theme')||'';
- if(/^(light|dark)$/.test(selected))document.documentElement.dataset.mapTheme=selected;
+ function setup(m){
+  if(initialized)return;initialized=true;
+  const form=$('userSpeedForm');if(!form)return;
+  m.open=true;
+  const actions=document.createElement('div');actions.className='mapWarningActions';
+  actions.innerHTML='<button type="button" id="mapNewWarning">＋ Новое предупреждение</button>';
+  $('userSpeedTabs').before(actions);
+  const tools=document.createElement('details');tools.className='mapAdvanced';
+  tools.innerHTML='<summary>Резервная копия и управление данными</summary>';
+  for(const id of ['userSpeedExport','userSpeedImport','userResetTemp','userResetTp','userRestoreReset']){
+   const e=$(id);if(!e)continue;
+   const wrapper=e.closest('.row');if(wrapper&&wrapper.parentElement===m){if([...wrapper.children].every(x=>x.id===id))tools.append(wrapper);else tools.append(e)}
+   else if(e.parentElement?.classList.contains('userImport'))tools.append(e.parentElement);
+   else tools.append(e);
+  }
+  m.append(tools);
+  const formTitle=$('userSpeedAddTitle');
+  if(formTitle)formTitle.textContent='Данные предупреждения';
+  form.hidden=true;
+  const add=$('mapNewWarning');
+  const openForm=()=>{form.hidden=false;form.scrollIntoView({behavior:'smooth',block:'start'})};
+  add.onclick=()=>{$('userClearForm')?.click();openForm()};
+  // The existing edit handler fills every field. Reveal the same form afterward.
+  m.addEventListener('click',e=>{if(e.target.closest('[data-edit]'))requestAnimationFrame(openForm)});
+  const cancel=document.createElement('button');cancel.type='button';cancel.id='mapCancelEditing';cancel.textContent='Отмена';cancel.className='mapCancelEditing';
+  $('userClearForm')?.after(cancel);cancel.onclick=()=>{$('userClearForm')?.click();form.hidden=true};
+  form.addEventListener('submit',()=>{setTimeout(()=>{const status=$('userSpeedStatus')?.textContent||'';if(!/ошиб|проверь|неверн|укажите|сначала|раньше/i.test(status)&&!form.elements.uid.value)form.hidden=true},70)});
+ }
+ function sync(){
+  const m=manager();if(!m)return;setup(m);
+  if(m.hidden!==(view!=='warnings'))m.hidden=view!=='warnings';
+  const count=$('mapWarningCount');
+  if(count){const n=[...m.querySelectorAll('.userSpeedCount')].reduce((a,e)=>a+(Number(e.textContent)||0),0);if(count.textContent!==String(n))count.textContent=String(n)}
+ }
+ nav.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));
+ const observer=new MutationObserver(sync);observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+ sync();show('profile');
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
