@@ -72,3 +72,23 @@ body.mapDrawerOpen{overflow:hidden}
  #driverPanel .driverChart#driverChart{height:clamp(330px,62svh,570px)}
  #driverPanel .driverActions:has(#driverDownload)>button{font-size:11px}
 }
+
+/* Offline library: one compact control and a clear per-route sheet. */
+#driverPanel .driverActions:has(#offlineLibraryButton){padding:0 11px 7px;gap:7px}
+#driverPanel #offlineLibraryButton{flex:1;min-height:40px;padding:8px 6px;white-space:normal;font-size:12px}
+#driverPanel .driverActions:has(#offlineLibraryButton)>#driverGPS{flex:1}
+#offlineLibrary[hidden]{display:none!important}
+#offlineLibrary{position:fixed;inset:0;z-index:9200;display:flex;align-items:flex-end;justify-content:center}
+.offlineLibraryShade{position:absolute;inset:0;background:#020b12bb}
+.offlineLibrarySheet{position:relative;display:flex;flex-direction:column;width:100%;max-width:740px;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:20px 20px 0 0;background:var(--bg);color:var(--text);border:1px solid var(--line);padding:12px 14px calc(18px + env(safe-area-inset-bottom))}
+.offlineLibraryHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.offlineLibraryHead b{font-size:17px}
+.offlineLibraryHead button{width:43px;min-height:43px;font-size:26px;padding:0}
+.offlineLibraryHint{font-size:12px;margin:4px 0 14px;color:var(--muted)}
+.offlineLibraryRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.offlineLibraryInfo{display:grid;gap:5px;min-width:0}
+.offlineLibraryInfo strong{font-size:14px}
+.offlineLibraryInfo small{font-size:12px;color:var(--muted)}
+.offlineLibraryRow button{width:auto;flex:0 0 auto;min-width:95px;min-height:39px;padding:8px 10px;background:var(--card);color:var(--text)}
+#offlineLibraryProgress{font-size:12px;min-height:18px;margin:12px 0 0;color:var(--muted)}
+body.offlineLibraryOpen{overflow:hidden}
