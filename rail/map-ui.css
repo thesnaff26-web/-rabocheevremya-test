@@ -1,0 +1,51 @@
+/* Compact mobile rail-map workspace; profile geometry remains untouched. */
+:root{--map-accent:#24c69a;--map-surface:#101f2b;--map-edge:#294455;--map-ink:#edf7fb;--map-sub:#9cb6c5}
+body{background:#07131d;color:#edf7fb}
+main{max-width:880px;padding:calc(10px + env(safe-area-inset-top)) 12px calc(32px + env(safe-area-inset-bottom))}
+main>header{margin-bottom:10px;align-items:center}
+main>header h1{font-size:20px;letter-spacing:-.4px}
+#mapQuickNav{position:relative;z-index:4;margin:9px 0 10px}
+.mapQuickTabs{display:grid;grid-template-columns:1fr 1.3fr .78fr;gap:4px;background:#142838;padding:5px;border-radius:17px;border:1px solid #2d4758}
+.mapQuickTabs button{width:100%;min-width:0;min-height:47px;padding:7px 3px;display:flex;justify-content:center;align-items:center;gap:5px;font-size:13px;border:0;border-radius:12px;background:transparent;color:#a9c2d0}
+.mapQuickTabs button.selected{color:#082b23;background:var(--map-accent);box-shadow:0 4px 14px #0003}
+.mapQuickTabs b{display:inline-flex;min-width:19px;height:19px;align-items:center;justify-content:center;font-size:11px;padding:0 4px;border-radius:99px;background:#ffffff20}
+.mapQuickTabs .selected b{background:#003a2c19}
+.mapQuickActions{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.mapQuickActions button{min-width:0;min-height:45px;background:#1a3041;border-color:#345265;color:#e9f7ff;font-size:13px;padding:9px 5px}
+.mapQuickActions .mapQuickPrimary{background:#183f36;border-color:#28785f;color:#6ff4c6}
+#driverPanel{margin-top:8px}
+#userSpeedManager{margin-top:8px;border-radius:17px;padding:14px;scroll-margin-top:12px}
+#userSpeedManager>summary{font-size:16px;letter-spacing:-.2px}
+#userSpeedManager .userSpeedOptions{margin:8px 0}
+#userSpeedManager .userSpeedTabs{margin:12px 0}
+#userSpeedManager .userSpeedItem{gap:8px;align-items:flex-start}
+#userSpeedManager .userSpeedItem>div:last-child{display:flex;gap:6px;flex-wrap:wrap}
+#userSpeedManager .userSpeedItem button{min-height:40px;padding:7px 9px;font-size:12px;width:auto}
+#userSpeedForm{scroll-margin-top:16px;margin-top:18px;padding-top:14px;border-top:1px solid #3b5264}
+.mapFormIntro{margin-bottom:10px}
+.mapFormIntro span{color:#4bdfb2;font-weight:800;letter-spacing:.1em;font-size:10px}
+.mapFormIntro p{margin:4px 0 8px;font-size:12px}
+#gpsSettings{margin-top:8px;scroll-margin-top:10px}
+#nearStations{max-height:200px;overflow:auto}
+@media(max-width:370px){.mapQuickTabs button{font-size:11px;gap:3px}.mapQuickTabs{grid-template-columns:1fr 1.36fr .73fr}.mapQuickActions button{font-size:12px}}
+@media(prefers-color-scheme:light){
+ :root:not([data-map-theme="dark"]){--map-accent:#0ba781}
+ :root:not([data-map-theme="dark"]) body{background:#edf3f6;color:#132b38}
+ :root:not([data-map-theme="dark"]) .mapQuickTabs{background:#fff;border-color:#d4e1e9}
+ :root:not([data-map-theme="dark"]) .mapQuickTabs button{color:#3f6172}
+ :root:not([data-map-theme="dark"]) .mapQuickTabs button.selected{color:#fff}
+ :root:not([data-map-theme="dark"]) .mapQuickActions button{background:#fff;color:#204152;border-color:#cbdce5}
+ :root:not([data-map-theme="dark"]) .mapQuickActions .mapQuickPrimary{background:#dff8ef;color:#086c51;border-color:#a4dccc}
+ :root:not([data-map-theme="dark"]) #driverPanel{--ink:#133245;--dim:#577484;background:#fff;border-color:#d2e0e8;box-shadow:0 7px 24px #15384c12}
+ :root:not([data-map-theme="dark"]) #driverPanel button{background:#edf4f8;color:#19394a;border-color:#c9dae4}
+ :root:not([data-map-theme="dark"]) #driverPanel button.active{background:#0ca680;color:white}
+ :root:not([data-map-theme="dark"]) #driverPanel .driverRouteLabel{color:#526f80}
+ :root:not([data-map-theme="dark"]) #driverPanel #driverRouteSelect{background:#f2f7fa;color:#183849;border-color:#cbdde7}
+}
+:root[data-map-theme="light"] body{background:#edf3f6;color:#132b38}
+:root[data-map-theme="light"] .mapQuickTabs{background:#fff;border-color:#d4e1e9}
+:root[data-map-theme="light"] .mapQuickTabs button{color:#3f6172}
+:root[data-map-theme="light"] .mapQuickTabs button.selected{color:#fff}
+:root[data-map-theme="light"] #driverPanel{--ink:#133245;--dim:#577484;background:#fff;border-color:#d2e0e8}
+:root[data-map-theme="light"] #driverPanel button{background:#edf4f8;color:#19394a;border-color:#c9dae4}
+:root[data-map-theme="light"] #driverPanel #driverRouteSelect{background:#f2f7fa;color:#183849;border-color:#cbdde7}
