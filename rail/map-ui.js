@@ -149,5 +149,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   window.addEventListener('focus',()=>refresh());
   refresh();
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+ let booted=false;
+ function startWhenReady(){
+   if(booted)return;
+   if(!$('driverRouteSelect')||!$('driverDownload'))return;
+   booted=true;observer.disconnect();init().catch(e=>console.error('Офлайн-профили:',e));
+ }
+ const observer=new MutationObserver(startWhenReady);
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startWhenReady,{once:true});
+ startWhenReady();
 })();
