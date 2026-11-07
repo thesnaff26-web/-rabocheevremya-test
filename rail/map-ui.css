@@ -40,3 +40,35 @@ body.mapDrawerOpen{overflow:hidden}
 }
 :root[data-map-theme="light"] #driverPanel,:root[data-theme="light"] #driverPanel{--ink:#183648;--dim:#557082;color:var(--ink);background:#fff;border-color:#d4e1e9}
 :root[data-map-theme="light"] #driverPanel button,:root[data-theme="light"] #driverPanel button{color:#183648;background:#eff5f8;border-color:#cadae5}
+
+/* November compact layout: free screen space for the actual track profile. */
+#driverPanel{border-radius:15px;margin-top:6px}
+#driverPanel .driverHead{padding:9px 11px 4px;gap:6px}
+#driverPanel .driverHead strong{font-size:22px}
+#driverPanel .driverHead small{font-size:10px}
+#driverPanel .driverSpeed b{font-size:21px}
+#driverPanel .driverRoute{display:none}
+#driverPanel .driverRouteLabel{margin:3px 11px 4px;font-size:11px}
+#driverPanel #driverRouteSelect{width:calc(100% - 22px);margin:0 11px 7px;min-height:44px;padding:8px 11px;font-size:15px}
+#driverPanel .driverActions:has(#driverDownload){padding:0 11px 7px;gap:7px;display:flex;grid-template-columns:none}
+#driverPanel .driverActions:has(#driverDownload)>button{min-width:0;min-height:40px;padding:8px 6px;font-size:12px;line-height:1.15;white-space:normal}
+#driverPanel .driverScales{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:0 11px 7px}
+#driverPanel .driverScales>span{display:none}
+#driverPanel .driverScales button{min-width:0;min-height:38px;font-size:12px;padding:6px 1px!important}
+#driverPanel .driverChart#driverChart{margin:0 8px;height:clamp(370px,66svh,680px)}
+#driverPanel .driverFoot{padding:6px 11px 4px}
+#driverPanel #driverOffline{display:none!important}
+#driverPanel #driverMessage:empty{display:none!important}
+#driverPanel #driverMessage{min-height:0;margin:0;padding:6px 11px;font-size:11px}
+#driverPanel .driverActions:has(#driverBack){padding:5px 9px 9px;gap:6px}
+#driverPanel .driverActions:has(#driverBack)>button{min-width:0;min-height:40px;padding:7px 3px;font-size:12px;white-space:normal}
+#driverPanel #driverBack,#driverPanel #driverNext{font-size:0!important}
+#driverPanel #driverBack::after{content:'← Назад';font-size:12px}
+#driverPanel #driverNext::after{content:'Вперёд →';font-size:12px}
+#driverPanel #driverHere{font-size:12px}
+#mapQuickNav{margin:5px 0}
+#mapWarningsToggle{min-height:39px}
+@media(max-width:360px){
+ #driverPanel .driverChart#driverChart{height:clamp(330px,62svh,570px)}
+ #driverPanel .driverActions:has(#driverDownload)>button{font-size:11px}
+}
