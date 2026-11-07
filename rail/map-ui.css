@@ -23,3 +23,14 @@ main>header{margin-bottom:9px}main>header h1{font-size:20px}
 .mapAdvanced .row{margin-top:10px}
 #gpsSettings{margin-top:10px}
 @media(max-width:370px){.mapQuickTabs button{font-size:12px}#userSpeedManager{padding:11px}}
+
+/* Follow the app's light appearance without changing profile geometry. */
+@media(prefers-color-scheme:light){
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel{--ink:#173548;--dim:#526e80;color:var(--ink);background:#fff;border-color:#d3e1e9;box-shadow:0 5px 18px #183f5412}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel button{color:#173548;background:#edf4f8;border-color:#cadbe5}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel button.active{color:#fff;background:#119f7d}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverRouteSelect{color:#173548!important;background:#f2f7fa!important;border-color:#cbdde7!important}
+}
+:root[data-theme="light"] #driverPanel,:root[data-map-theme="light"] #driverPanel{--ink:#173548;--dim:#526e80;color:var(--ink);background:#fff;border-color:#d3e1e9}
+:root[data-theme="light"] #driverPanel button,:root[data-map-theme="light"] #driverPanel button{color:#173548;background:#edf4f8;border-color:#cadbe5}
+:root[data-theme="light"] #driverRouteSelect,:root[data-map-theme="light"] #driverRouteSelect{color:#173548!important;background:#f2f7fa!important}
