@@ -119,12 +119,41 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       const status=document.createElement('small');status.textContent=fmt(item.done,item.total);
       info.append(title,status);
       const action=document.createElement('button');action.type='button';
-      action.textContent=item.done===item.total?'Обновить':item.done?'Докачать':'Скачать';
+      action.textContent=item.done>0?'Удалить':'Скачать';
+      if(item.done>0)action.classList.add('offlineDelete');
       action.disabled=busy;
-      action.onclick=()=>start(item.route.id);
+      action.onclick=()=>item.done>0?removeOffline(item.route.id):start(item.route.id);
       row.append(info,action);list.append(row);
     }
    }catch(e){if(token===refreshToken)list.textContent='Не удалось проверить профили: '+e.message}
+  }
+  async function removeOffline(id){
+   if(busy)return;
+   const data=await getCatalog();
+   const chosen=data.routes.find(r=>r.id===id);
+   if(!chosen)return;
+   const doc=data.documents.find(d=>d.id===chosen.document);
+   if(!doc)return;
+   const pages=doc.leaves.filter(p=>p.kind==='profile'&&p.route===id);
+   const others=new Set(data.routes.filter(r=>r.id!==id).flatMap(r=>{
+      const d=data.documents.find(x=>x.id===r.document);
+      return d?d.leaves.filter(p=>p.kind==='profile'&&p.route===r.id).map(p=>p.file):[];
+   }));
+   const exclusive=pages.filter(p=>!others.has(p.file));
+   if(!exclusive.length){$('offlineLibraryProgress').textContent='Нет отдельных файлов для удаления.';return}
+   if(!confirm('Удалить офлайн-профиль «'+label(chosen)+'» с этого устройства? После удаления для просмотра несохранённых листов потребуется интернет. Другие направления и маршруты останутся.'))return;
+   busy=true;
+   $('offlineLibraryProgress').textContent='Удаляем сохранённые листы…';
+   try{
+     const cache=await caches.open('rabochee-regime-documents-v1');
+     let removed=0;
+     for(const page of exclusive){
+       const url=new URL(page.file,root).href;
+       if(await cache.delete(url))removed++;
+     }
+     $('offlineLibraryProgress').textContent='Удалено листов: '+removed+'. Данные маршрутов сохранены.';
+   }catch(e){$('offlineLibraryProgress').textContent='Не удалось удалить: '+e.message}
+   finally{busy=false;await refresh()}
   }
   async function start(id){
    if(busy)return;
