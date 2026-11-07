@@ -92,3 +92,5 @@ body.mapDrawerOpen{overflow:hidden}
 .offlineLibraryRow button{width:auto;flex:0 0 auto;min-width:95px;min-height:39px;padding:8px 10px;background:var(--card);color:var(--text)}
 #offlineLibraryProgress{font-size:12px;min-height:18px;margin:12px 0 0;color:var(--muted)}
 body.offlineLibraryOpen{overflow:hidden}
+
+#driverPanel #driverDownload[hidden]{display:none!important}
