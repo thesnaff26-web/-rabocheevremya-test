@@ -96,3 +96,6 @@ body.offlineLibraryOpen{overflow:hidden}
 #driverPanel #driverDownload[hidden]{display:none!important}
 
 .offlineLibraryRow button.offlineDelete{color:#f5a7aa;border-color:#815057;background:transparent}
+
+/* Keep the overview as the sole profile surface. */
+#driverPanel #driverDetail{display:none!important}
