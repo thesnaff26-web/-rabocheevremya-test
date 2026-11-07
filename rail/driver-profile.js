@@ -157,7 +157,7 @@
    for(const p of chosen)if(tiles.status(p)==='failed')problems.push('Лист '+p.number+': '+tiles.error(p).message);
    // Explicit gaps remain blank; duplicate pages and route boundaries are never filled with guesses.
    const intervals=entries.map(e=>[Math.max(lo,e.page.start),Math.min(hi,e.page.end)]).sort((a,b)=>a[0]-b[0]);let cursor=lo;for(const [a,b] of intervals){if(a>cursor+1&&!pending)problems.push('Часть обзора без данных');cursor=Math.max(cursor,b)}if(cursor<hi-1&&!pending)problems.push('Часть обзора без данных');
-   chart($('driverChart'),r);if(selection!==null)detail();$('driverMessage').textContent=pending?'Загружено '+entries.length+' из '+chosen.length+' листов. Ожидаем остальные…':problems.length?[...new Set(problems)].join('. '):'Нажмите на профиль — подробности участка. Сдвигайте по горизонтали для обзора.';
+   chart($('driverChart'),r);if(selection!==null)detail();$('driverMessage').textContent=pending?'Загружено '+entries.length+' из '+chosen.length+' листов. Ожидаем остальные…':problems.length?[...new Set(problems)].join('. '):'';
   }
   function detail(){if(selection===null)return;$('driverDetail').hidden=false;$('driverDetailTitle').textContent=fmt(selection)+' · участок 1 км';chart($('driverDetailChart'),range(selection,1000),true)}
   function update(){
