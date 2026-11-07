@@ -205,7 +205,7 @@ function render(el,r,currentRoute,cb,position){
  const manualPreview=el.id==='driverChart'&&typeof document!=='undefined'&&document.getElementById('driverMode')?.textContent?.includes('Ручной');
  const items=records.filter(a=>a.routeId===route.id&&['temporary','tp'].includes(a.type)&&shown[a.type]&&
   (active(a)||manualPreview));
- const n=document.createElement('div');n.className='userSpeedOverlay';n.setAttribute('aria-hidden','true');
+ const n=document.createElement('div');n.className='userSpeedOverlay';n.setAttribute('aria-hidden','true');const hitTargets=[];
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');const w=Math.max(260,el.clientWidth||320);svg.setAttribute('viewBox','0 0 '+w+' 130');svg.setAttribute('preserveAspectRatio','none');n.append(svg);
  const NS='http://www.w3.org/2000/svg',make=(tag,attrs,str)=>{const node=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,v);if(str!=null)node.textContent=str;svg.append(node)};
  // Only temporary restrictions and pantograph points are rendered.
@@ -220,6 +220,7 @@ function render(el,r,currentRoute,cb,position){
     const cx=x(m);if(cx<0||cx>w)continue;
     make('circle',{cx,cy:108,r:8,fill:active(a)?color:'#8493a3','fill-opacity':active(a)?1:.65});
     make('text',{x:cx,y:111,'text-anchor':'middle','font-size':11,'font-weight':800,fill:'#081321'},t);
+    hitTargets.push({id:a.id,x:cx,y:108,halfWidth:19,halfHeight:19});
    }
    continue;
   }
@@ -238,7 +239,7 @@ function render(el,r,currentRoute,cb,position){
    // A one-sided imported speed is a reference marker, never a confirmed limit.
    make('circle',{cx:x1,cy:sy,r:5.5,fill:'none',stroke:color,'stroke-width':2,'stroke-dasharray':'2 2'});
   }else make('circle',{cx:x1,cy:sy,r:4,fill:color});
-  labels[group].push({at:a.end==null?x1:(left+right)/2,y:sy-3,color,value:String(a.speed)+(a.boundaryUnconfirmed?'?':'')});
+  labels[group].push({id:a.id,at:a.end==null?x1:(left+right)/2,y:sy-3,color,value:String(a.speed)+(a.boundaryUnconfirmed?'?':'')});
  }
  // Keep numerical labels at a fixed vertical level, spread nearby labels horizontally.
  for(const group of Object.values(labels)){
@@ -255,9 +256,55 @@ function render(el,r,currentRoute,cb,position){
    prev=labelX;
    if(Math.abs(labelX-item.at)>5)make('line',{x1:item.at,y1:item.y+3,x2:labelX,y2:item.y+3,stroke:item.color,'stroke-opacity':.5});
    make('text',{x:labelX,y:item.y,'text-anchor':'middle','font-size':17,'font-weight':900,fill:item.color,stroke:'#101d2c','stroke-width':2,'paint-order':'stroke'},item.value);
+   hitTargets.push({id:item.id,x:labelX,y:item.y-7,halfWidth:Math.max(20,item.value.length*6+6),halfHeight:19});
   }
  }
- el.append(n);
+ n._warningHits=hitTargets;n._warningWidth=w;el.append(n);
 }
-root.UserSpeeds={render};
+function closePicked(){
+ const panel=$('mapPickedWarning');if(panel)panel.remove();
+}
+function selectedWarning(id){
+ const a=records.find(r=>r.id===id&&r.routeId===route?.id);
+ if(!a)return false;
+ closePicked();
+ const panel=document.createElement('section');panel.id='mapPickedWarning';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Выбранное предупреждение');
+ const heading=document.createElement('div');heading.className='mapPickedHeading';
+ const title=document.createElement('strong');title.textContent=a.type==='tp'?'Опускание токоприёмника':a.speed+' км/ч · временное';
+ const close=document.createElement('button');close.type='button';close.className='mapPickedClose';close.textContent='×';close.setAttribute('aria-label','Закрыть');
+ close.onclick=closePicked;heading.append(title,close);
+ const desc=document.createElement('p');desc.textContent=a.type==='tp'?point(a.start)+' → '+point(a.lower)+' → '+point(a.raise):point(a.start)+(a.end==null?' · точечная отметка':' — '+point(a.end));
+ const actions=document.createElement('div');actions.className='mapPickedActions';
+ const editButton=document.createElement('button');editButton.type='button';editButton.textContent='Изменить';editButton.className='mapPickedEdit';
+ const removeButton=document.createElement('button');removeButton.type='button';removeButton.textContent='Удалить';removeButton.className='mapPickedDelete';
+ editButton.onclick=()=>{
+   closePicked();
+   const drawer=$('mapWarningDrawer');
+   if(drawer?.hidden)$('mapWarningsToggle')?.click();
+   else if(!drawer) $('userSpeedManager').open=true;
+   setTab(a.type,false);
+   const listButton=[...document.querySelectorAll('#userSpeedList [data-edit]')].find(b=>b.dataset.edit===a.id);
+   if(listButton)listButton.click();
+   else {edit(a.id);const form=$('userSpeedForm');if(form){form.hidden=false;form.scrollIntoView({block:'start'})}}
+ };
+ removeButton.onclick=()=>{
+   if(!confirm('Удалить предупреждение «'+title.textContent+'» ('+desc.textContent+')?'))return;
+   records=records.filter(r=>r.id!==a.id);closePicked();persist();
+ };
+ actions.append(editButton,removeButton);panel.append(heading,desc,actions);document.body.append(panel);
+ return true;
+}
+function selectAt(el,clientX,clientY){
+ if(!el||el.id!=='driverChart')return false;
+ const overlay=el.querySelector('.userSpeedOverlay'),hits=overlay?._warningHits;
+ if(!hits?.length)return false;
+ const rect=overlay.getBoundingClientRect();
+ if(!rect.width||!rect.height)return false;
+ const x=(clientX-rect.left)*overlay._warningWidth/rect.width;
+ const y=(clientY-rect.top)*130/rect.height;
+ const found=hits.filter(h=>Math.abs(x-h.x)<=h.halfWidth&&Math.abs(y-h.y)<=h.halfHeight)
+   .sort((a,b)=>Math.hypot((x-a.x)/a.halfWidth,(y-a.y)/a.halfHeight)-Math.hypot((x-b.x)/b.halfWidth,(y-b.y)/b.halfHeight))[0];
+ return found?selectedWarning(found.id):false;
+}
+root.UserSpeeds={render,selectAt};
 })(typeof globalThis!=='undefined'?globalThis:this);
