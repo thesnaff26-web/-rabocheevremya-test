@@ -1,36 +1,42 @@
-/* Two-screen electronic map interface: no duplicate GPS, list or add buttons. */
+/* Compact controls: one warning entry point, full-width profile. */
 main{max-width:880px;padding:calc(10px + env(safe-area-inset-top)) 12px calc(32px + env(safe-area-inset-bottom))}
-main>header{margin-bottom:9px}main>header h1{font-size:20px}
-#mapQuickNav{margin:5px 0 10px}
-.mapQuickTabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:15px}
-.mapQuickTabs button{width:100%;min-width:0;min-height:46px;font-size:14px;font-weight:750;border:0;border-radius:11px;color:var(--muted);background:transparent;padding:9px 4px}
-.mapQuickTabs button.selected{background:#15bd92;color:#062a21}
-#mapWarningCount{display:inline-flex;align-items:center;justify-content:center;min-width:21px;padding:2px 5px;border-radius:99px;background:#7e93a629;font-size:11px;margin-left:3px}
-#driverPanel{margin-top:8px}
-#userSpeedManager{margin-top:8px;padding:14px;border-radius:17px}
-#userSpeedManager>summary{font-size:15px}
-#userSpeedManager .userSpeedTabs{margin:10px 0}
-#userSpeedManager .userSpeedItem{gap:8px}
-#userSpeedManager .userSpeedItem>div:last-child{display:flex;gap:6px;flex-wrap:wrap}
-#userSpeedManager .userSpeedItem button{width:auto;padding:8px;min-height:42px;font-size:12px}
-.mapWarningActions{margin:12px 0 8px}
-#mapNewWarning{min-height:47px;background:#17bd91;color:#082b22;border-color:#17bd91;font-size:14px}
-#userSpeedForm{scroll-margin-top:12px;padding:13px;margin:12px 0;background:var(--bg);border:1px solid var(--line);border-radius:14px}
+main>header{margin-bottom:9px}
+main>header h1{font-size:20px}
+#mapQuickNav{margin:8px 0}
+#mapWarningsToggle{display:flex;align-items:center;justify-content:center;gap:10px;min-height:43px;width:100%;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:750;color:var(--text)}
+#mapWarningCount{min-width:22px;padding:3px 7px;border-radius:99px;background:#1abf9450;color:var(--text);font-size:12px}
+#driverPanel{margin-top:7px}
+#mapWarningDrawer[hidden]{display:none!important}
+#mapWarningDrawer{position:fixed;inset:0;z-index:9000;display:flex;align-items:flex-end;justify-content:center}
+.mapDrawerShade{position:absolute;inset:0;background:#020b12bc}
+.mapDrawerSheet{position:relative;width:100%;max-width:740px;height:min(91dvh,1000px);border-radius:20px 20px 0 0;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom)}
+.mapDrawerHead{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.mapDrawerHead strong{font-size:17px}
+#mapCloseDrawer{font-size:27px;line-height:1;min-height:43px;width:48px;padding:3px}
+#mapDrawerContent{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 10px 16px;flex:1}
+body.mapDrawerOpen{overflow:hidden}
+#mapDrawerContent #userSpeedManager{margin:0;border:0;box-shadow:none;padding:11px 3px;background:transparent}
+#mapDrawerContent #userSpeedManager>summary[hidden]{display:none!important}
+#mapDrawerContent .mapSmallNotice{font-size:11px;line-height:1.35;margin:0 0 12px}
+#mapDrawerContent .userSpeedTabs{margin:12px 0 10px}
+#mapDrawerContent .userSpeedItem{gap:7px;align-items:start}
+#mapDrawerContent .userSpeedItem>div:last-child{display:flex;gap:6px;flex-wrap:wrap}
+#mapDrawerContent .userSpeedItem button{width:auto;min-height:41px;padding:8px 9px;font-size:12px}
+.mapWarningActions{margin:8px 0}
+#mapNewWarning{background:#15b98b;color:#06281f;border-color:#15b98b;min-height:47px}
+#userSpeedForm{scroll-margin-top:10px;border:1px solid var(--line);background:var(--card);border-radius:13px;padding:12px;margin-top:12px}
 #userSpeedForm[hidden]{display:none!important}
-#userSpeedForm .mapCancelEditing{background:transparent;color:var(--muted)}
-.mapAdvanced{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px}
+#mapCancelEditing{margin:6px 0;background:transparent}
+.mapAdvanced{padding:11px;border:1px solid var(--line);border-radius:12px;margin-top:12px}
 .mapAdvanced summary{font-size:13px}
-.mapAdvanced .row{margin-top:10px}
-#gpsSettings{margin-top:10px}
-@media(max-width:370px){.mapQuickTabs button{font-size:12px}#userSpeedManager{padding:11px}}
-
-/* Follow the app's light appearance without changing profile geometry. */
+.mapAdvanced .row{margin:9px 0}
+@media(max-width:375px){.mapDrawerHead strong{font-size:15px}#mapDrawerContent{padding:0 8px 14px}}
+/* Respect selected appearance; preserve the actual rail chart rendering. */
 @media(prefers-color-scheme:light){
- :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel{--ink:#173548;--dim:#526e80;color:var(--ink);background:#fff;border-color:#d3e1e9;box-shadow:0 5px 18px #183f5412}
- :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel button{color:#173548;background:#edf4f8;border-color:#cadbe5}
- :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel button.active{color:#fff;background:#119f7d}
- :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverRouteSelect{color:#173548!important;background:#f2f7fa!important;border-color:#cbdde7!important}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel{--ink:#183648;--dim:#557082;background:#fff;color:var(--ink);border-color:#d4e1e9}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel button{color:#183648;background:#eff5f8;border-color:#cadae5}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverPanel button.active{color:white;background:#0fa882}
+ :root:not([data-theme="dark"]):not([data-map-theme="dark"]) #driverRouteSelect{color:#183648!important;background:#eff5f8!important}
 }
-:root[data-theme="light"] #driverPanel,:root[data-map-theme="light"] #driverPanel{--ink:#173548;--dim:#526e80;color:var(--ink);background:#fff;border-color:#d3e1e9}
-:root[data-theme="light"] #driverPanel button,:root[data-map-theme="light"] #driverPanel button{color:#173548;background:#edf4f8;border-color:#cadbe5}
-:root[data-theme="light"] #driverRouteSelect,:root[data-map-theme="light"] #driverRouteSelect{color:#173548!important;background:#f2f7fa!important}
+:root[data-map-theme="light"] #driverPanel,:root[data-theme="light"] #driverPanel{--ink:#183648;--dim:#557082;color:var(--ink);background:#fff;border-color:#d4e1e9}
+:root[data-map-theme="light"] #driverPanel button,:root[data-theme="light"] #driverPanel button{color:#183648;background:#eff5f8;border-color:#cadae5}
