@@ -99,3 +99,14 @@ body.offlineLibraryOpen{overflow:hidden}
 
 /* Keep the overview as the sole profile surface. */
 #driverPanel #driverDetail{display:none!important}
+
+/* Context actions when tapping a real warning symbol on the track profile. */
+#mapPickedWarning{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:8800;max-width:620px;margin:0 auto;padding:13px 14px 12px;background:var(--card,#112638);color:var(--text,#eef7fb);border:1px solid var(--line,#345266);border-radius:17px;box-shadow:0 14px 45px #0009}
+.mapPickedHeading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mapPickedHeading strong{font-size:16px;line-height:1.3}
+#mapPickedWarning .mapPickedClose{width:38px;min-height:38px;padding:2px 6px;border-radius:10px;font-size:24px}
+#mapPickedWarning p{font-size:13px;color:var(--muted,#9cb4c3);margin:7px 0 11px;line-height:1.4}
+.mapPickedActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#mapPickedWarning .mapPickedActions button{min-height:45px;font-size:14px}
+#mapPickedWarning .mapPickedEdit{background:#21c39a;color:#052a20;border-color:#21c39a}
+#mapPickedWarning .mapPickedDelete{background:transparent;color:#f2a3a8;border-color:#87555e}
