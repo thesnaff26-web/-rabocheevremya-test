@@ -67,7 +67,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  async function init(){
   const select=$('driverRouteSelect'),old=$('driverDownload');
   if(!select||!old||$('offlineLibraryButton'))return;
-  const button=document.createElement('button');button.type='button';button.id='offlineLibraryButton';button.textContent='Офлайн-профили';old.replaceWith(button);
+  const button=document.createElement('button');button.type='button';button.id='offlineLibraryButton';button.textContent='Офлайн-профили';old.hidden=true;old.after(button);
   const sheet=document.createElement('div');sheet.id='offlineLibrary';sheet.hidden=true;
   sheet.innerHTML='<div class="offlineLibraryShade"></div><section class="offlineLibrarySheet" role="dialog" aria-modal="true" aria-label="Офлайн-профили"><header class="offlineLibraryHead"><b>Офлайн-профили</b><button id="offlineLibraryClose" type="button" aria-label="Закрыть">×</button></header><p class="offlineLibraryHint">Сохраняйте направления для работы без интернета.</p><div id="offlineLibraryList" aria-live="polite">Проверка сохранённых листов…</div><p id="offlineLibraryProgress" role="status"></p></section>';
   document.body.append(sheet);
