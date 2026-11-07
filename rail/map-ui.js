@@ -60,3 +60,94 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+
+/* One consolidated offline-library sheet replaces the large download button. */
+(function(){
+ const $=id=>document.getElementById(id);
+ async function init(){
+  const select=$('driverRouteSelect'),old=$('driverDownload');
+  if(!select||!old||$('offlineLibraryButton'))return;
+  const button=document.createElement('button');button.type='button';button.id='offlineLibraryButton';button.textContent='Офлайн-профили';old.replaceWith(button);
+  const sheet=document.createElement('div');sheet.id='offlineLibrary';sheet.hidden=true;
+  sheet.innerHTML='<div class="offlineLibraryShade"></div><section class="offlineLibrarySheet" role="dialog" aria-modal="true" aria-label="Офлайн-профили"><header class="offlineLibraryHead"><b>Офлайн-профили</b><button id="offlineLibraryClose" type="button" aria-label="Закрыть">×</button></header><p class="offlineLibraryHint">Сохраняйте направления для работы без интернета.</p><div id="offlineLibraryList" aria-live="polite">Проверка сохранённых листов…</div><p id="offlineLibraryProgress" role="status"></p></section>';
+  document.body.append(sheet);
+  const close=()=>{sheet.hidden=true;document.body.classList.remove('offlineLibraryOpen')};
+  button.onclick=()=>{sheet.hidden=false;document.body.classList.add('offlineLibraryOpen');refresh()};
+  $('offlineLibraryClose').onclick=close;sheet.querySelector('.offlineLibraryShade').onclick=close;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)close()});
+  let catalog=null,busy=false,refreshToken=0;
+  const label=r=>r.name.replace(/ · (чётный|нечётный) путь/,'');
+  const root=new URL('./',document.baseURI);
+  const fmt=(n,total)=>!total?'Нет листов':n===total?'✓ Скачан':n===0?'Не скачан':n+' из '+total+' листов';
+  async function getCatalog(){
+   if(catalog)return catalog;
+   const response=await fetch(new URL('rail/regime-catalog.json',root));
+   if(!response.ok)throw Error('Каталог участков недоступен');
+   catalog=await response.json();return catalog;
+  }
+  async function statuses(){
+   const data=await getCatalog();
+   if(!('caches' in window))throw Error('Офлайн-хранилище недоступно');
+   const cache=await caches.open('rabochee-regime-documents-v1');
+   return Promise.all(data.routes.map(async r=>{
+    const doc=data.documents.find(d=>d.id===r.document);
+    const pages=doc.leaves.filter(p=>p.kind==='profile'&&p.route===r.id);
+    let count=0;
+    for(const p of pages){
+      const hit=await cache.match(new URL(p.file,root).href);
+      if(hit?.headers.get('X-Regime-SHA256')===p.sha256)count++;
+    }
+    return {route:r,done:count,total:pages.length};
+   }));
+  }
+  async function refresh(){
+   const token=++refreshToken,list=$('offlineLibraryList');
+   try{
+    const stats=await statuses();if(token!==refreshToken)return;
+    const complete=stats.filter(x=>x.total&&x.done===x.total).length;
+    button.textContent='Офлайн · '+complete+'/'+stats.length;
+    // iPhone's native selector supports plain text labels, unlike styled badges.
+    for(const option of select.options){
+      const stat=stats.find(x=>x.route.id===option.value);
+      if(stat)option.textContent=label(stat.route)+(stat.done===stat.total?' ✓':stat.done?' ◐':'');
+    }
+    list.replaceChildren();
+    for(const item of stats){
+      const row=document.createElement('div');row.className='offlineLibraryRow';
+      const info=document.createElement('div');info.className='offlineLibraryInfo';
+      const title=document.createElement('strong');title.textContent=label(item.route);
+      const status=document.createElement('small');status.textContent=fmt(item.done,item.total);
+      info.append(title,status);
+      const action=document.createElement('button');action.type='button';
+      action.textContent=item.done===item.total?'Обновить':item.done?'Докачать':'Скачать';
+      action.disabled=busy;
+      action.onclick=()=>start(item.route.id);
+      row.append(info,action);list.append(row);
+    }
+   }catch(e){if(token===refreshToken)list.textContent='Не удалось проверить профили: '+e.message}
+  }
+  async function start(id){
+   if(busy)return;
+   if(!navigator.onLine){$('offlineLibraryProgress').textContent='Нет подключения к интернету';return}
+   const save=$('regimeSave');if(!save||save.disabled){$('offlineLibraryProgress').textContent='Скачивание сейчас недоступно';return}
+   busy=true;
+   // Select the requested route through the existing verified downloader.
+   select.value=id;select.dispatchEvent(new Event('change',{bubbles:true}));
+   $('offlineLibraryProgress').textContent='Начинаем сохранение…';
+   save.click();
+   const progress=$('regimeOffline');
+   const watcher=setInterval(()=>{
+      $('offlineLibraryProgress').textContent=progress?.textContent||'Сохраняем…';
+      if(!save.disabled){
+       clearInterval(watcher);busy=false;refresh();
+      }
+   },500);
+   refresh();
+  }
+  document.addEventListener('railroutechanged',()=>{refresh().catch(()=>{})});
+  document.addEventListener('regimepagesready',()=>{if(!sheet.hidden)refresh().catch(()=>{})});
+  window.addEventListener('focus',()=>refresh());
+  refresh();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
